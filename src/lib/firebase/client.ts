@@ -19,6 +19,13 @@ const config: FirebaseOptions = {
  */
 export const isFirebaseConfigured = Boolean(config.apiKey && config.projectId && config.appId);
 
+/**
+ * Sign in with Apple needs a paid Apple Developer account to configure, so the
+ * button stays hidden until the provider is actually enabled in the Firebase
+ * console. Flip NEXT_PUBLIC_ENABLE_APPLE_SIGNIN to "true" to show it.
+ */
+export const isAppleSignInEnabled = process.env.NEXT_PUBLIC_ENABLE_APPLE_SIGNIN === "true";
+
 function app() {
   if (!isFirebaseConfigured) {
     throw new Error(

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signInWithApple, signInWithGoogle } from "@/lib/firebase/auth";
+import { isAppleSignInEnabled } from "@/lib/firebase/client";
 
 /** Provider marks are inline SVG so no external asset host is needed. */
 function GoogleMark() {
@@ -73,15 +74,17 @@ export function OAuthButtons({
         <GoogleMark />
         {pending === "google" ? "Opening Google…" : "Continue with Google"}
       </button>
-      <button
-        type="button"
-        disabled={pending !== null}
-        onClick={() => run("apple", signInWithApple)}
-        className={`${base} bg-[#000] text-white hover:bg-[#1a1a1a] dark:bg-white dark:text-black dark:hover:bg-[#e8e8e8]`}
-      >
-        <AppleMark />
-        {pending === "apple" ? "Opening Apple…" : "Continue with Apple"}
-      </button>
+      {isAppleSignInEnabled && (
+        <button
+          type="button"
+          disabled={pending !== null}
+          onClick={() => run("apple", signInWithApple)}
+          className={`${base} bg-[#000] text-white hover:bg-[#1a1a1a] dark:bg-white dark:text-black dark:hover:bg-[#e8e8e8]`}
+        >
+          <AppleMark />
+          {pending === "apple" ? "Opening Apple…" : "Continue with Apple"}
+        </button>
+      )}
     </div>
   );
 }
