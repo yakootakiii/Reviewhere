@@ -1,6 +1,5 @@
 import {
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -104,7 +103,24 @@ export function renameDocument(documentId: string, fileName: string) {
   return updateDoc(doc(firestore(), "documents", documentId), { fileName });
 }
 
-export function deleteDocument(documentId: string) {
-  // Page subdocuments are cleaned up server-side; this removes it from the library.
-  return deleteDoc(doc(firestore(), "documents", documentId));
+/** §2.6 subject tags. Rules allow the owner to rename or tag, never to restate pageCount. */
+export function updateDocumentTags(documentId: string, tags: string[]) {
+  return updateDoc(doc(firestore(), "documents", documentId), { tags });
+}
+
+/**
+ * Deleting goes through the API rather than `deleteDoc`: `/documents/{id}/pages`
+ * is `write: false` in the rules and Firestore has no cascade, so a client-side
+ * delete of the parent would leave every page row orphaned.
+ */
+export async function deleteDocument(user: User, documentId: string): Promise<void> {
+  const token = await user.getIdToken();
+  const response = await fetch(`/api/documents/${documentId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? "That document couldn't be deleted. Please try again.");
+  }
 }

@@ -2,13 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserMenu } from "./user-menu";
 
 /** §7.4: translucent/blurred on scroll, with a ⌘K search hint. */
 export function TopBar() {
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [query, setQuery] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,11 +43,22 @@ export function TopBar() {
         Review<span className="text-accent-gradient">here</span>
       </Link>
 
-      <div className="relative ml-auto hidden max-w-sm flex-1 items-center sm:flex lg:ml-0">
+      <form
+        role="search"
+        onSubmit={(event) => {
+          event.preventDefault();
+          // The library owns the results; the URL carries the query so ⌘K from
+          // any page lands there already filtered.
+          router.push(query.trim() ? `/library?q=${encodeURIComponent(query.trim())}` : "/library");
+        }}
+        className="relative ml-auto hidden max-w-sm flex-1 items-center sm:flex lg:ml-0"
+      >
         <Search aria-hidden className="pointer-events-none absolute left-3 size-4 text-tertiary" />
         <input
           ref={searchRef}
           type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
           placeholder="Search reviewers"
           aria-label="Search reviewers"
           className={cn(
@@ -59,7 +73,7 @@ export function TopBar() {
         >
           ⌘K
         </kbd>
-      </div>
+      </form>
 
       <div className="ml-auto flex items-center gap-1 lg:ml-4">
         <UserMenu />

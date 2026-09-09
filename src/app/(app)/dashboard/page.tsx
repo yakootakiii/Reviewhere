@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DocumentGrid } from "@/components/library/document-grid";
+import { RecentItems } from "@/components/library/recent-items";
 import { useAuth } from "@/components/auth/auth-provider";
 
 export default function DashboardPage() {
@@ -27,7 +27,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      <DocumentGrid max={6} />
+      <RecentItems max={6} />
     </div>
   );
 }

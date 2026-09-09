@@ -1,21 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Library as LibraryIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CardSkeleton, EmptyState, ErrorPanel } from "@/components/ui/feedback";
 import { useAuth } from "@/components/auth/auth-provider";
+import { LibraryCard } from "./library-card";
 import { listDocuments } from "@/lib/firebase/documents";
-import type { StudyDocument } from "@/lib/types";
-import { DocumentCard } from "./document-card";
+import { listQuizzes } from "@/lib/firebase/quizzes";
+import { buildLibraryItems, sortItems } from "@/lib/library";
+import type { Quiz, StudyDocument } from "@/lib/types";
 
 type State =
   | { name: "loading" }
-  | { name: "ready"; documents: StudyDocument[] }
+  | { name: "ready"; documents: StudyDocument[]; quizzes: Quiz[] }
   | { name: "error" };
 
-export function DocumentGrid({ max }: { max?: number }) {
+/**
+ * §2.6's dashboard grid: the most recent documents and quizzes together. Cards
+ * are read-only here — managing things is the Library's job.
+ */
+export function RecentItems({ max = 6 }: { max?: number }) {
   const { user } = useAuth();
   const [state, setState] = useState<State>({ name: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
@@ -24,9 +30,9 @@ export function DocumentGrid({ max }: { max?: number }) {
     if (!user) return;
     let active = true;
 
-    listDocuments(user.uid, max)
-      .then((documents) => {
-        if (active) setState({ name: "ready", documents });
+    Promise.all([listDocuments(user.uid, max), listQuizzes(user.uid, max)])
+      .then(([documents, quizzes]) => {
+        if (active) setState({ name: "ready", documents, quizzes });
       })
       .catch(() => {
         if (active) setState({ name: "error" });
@@ -36,6 +42,14 @@ export function DocumentGrid({ max }: { max?: number }) {
       active = false;
     };
   }, [user, max, reloadKey]);
+
+  const items = useMemo(
+    () =>
+      state.name === "ready"
+        ? sortItems(buildLibraryItems(state.documents, state.quizzes), "recent").slice(0, max)
+        : [],
+    [state, max],
+  );
 
   if (state.name === "loading") {
     return (
@@ -67,7 +81,7 @@ export function DocumentGrid({ max }: { max?: number }) {
     );
   }
 
-  if (state.documents.length === 0) {
+  if (items.length === 0) {
     return (
       <EmptyState
         icon={<LibraryIcon className="size-6" />}
@@ -83,10 +97,12 @@ export function DocumentGrid({ max }: { max?: number }) {
   }
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-      {state.documents.map((document) => (
-        <DocumentCard key={document.id} document={document} />
+    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      {items.map((item) => (
+        <li key={`${item.kind}-${item.id}`}>
+          <LibraryCard item={item} view="grid" />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }

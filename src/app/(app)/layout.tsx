@@ -3,6 +3,7 @@
 import { AuthGuard } from "@/components/auth/auth-guard";
 import { Sidebar } from "@/components/shell/sidebar";
 import { BottomTabBar } from "@/components/shell/bottom-tab-bar";
+import { NetworkToast } from "@/components/shell/network-toast";
 import { TopBar } from "@/components/shell/top-bar";
 import { usePersistedValue } from "@/lib/persisted-state";
 
@@ -14,6 +15,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh">
+      {/* §6: keyboard users shouldn't have to tab the whole nav on every page. */}
+      <a
+        href="#main"
+        className="sr-only rounded-md bg-surface px-4 py-2 text-callout font-medium shadow-[var(--shadow-lifted)] focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:outline-2 focus:outline-offset-2 focus:outline-[var(--color-accent)]"
+      >
+        Skip to content
+      </a>
+      <NetworkToast />
       <Sidebar collapsed={collapsed} onToggle={() => setStored(collapsed ? "false" : "true")} />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
