@@ -48,6 +48,8 @@ export interface StudyDocument {
   status: DocumentStatus;
   sizeBytes: number;
   createdAt: Timestamp | null;
+  /** §2.6 subject tags, free-form and client-writable. */
+  tags?: string[];
   /** Set when status is "failed" — surfaced with a retry action (§6). */
   errorMessage?: string;
 }
@@ -58,11 +60,20 @@ export interface Quiz {
   documentId: string;
   title: string;
   questionCount: number;
+  /** The mix as actually generated — a chunk can come up short of the request. */
   mix: { mcqPct: number; idPct: number };
+  /** What the user asked for, kept so "regenerate" (§2.6) can reuse it. */
+  requestedMix?: { mcq: number; identification: number };
   difficulty: Difficulty;
+  /** The page range the questions were drawn from; null means the whole document. */
+  scope?: { from: number; to: number } | null;
   generationMode: GenerationMode;
+  /** Mode A only — which free model answered. Metadata, never branched on. */
+  model?: string | null;
   createdAt: Timestamp | null;
   lastAttemptScore: number | null;
+  /** §2.6 subject tags, free-form and client-writable. */
+  tags?: string[];
 }
 
 export interface Question {
@@ -93,6 +104,8 @@ export interface Attempt {
   startedAt: Timestamp | null;
   completedAt: Timestamp | null;
   score: number;
+  /** Wall-clock seconds for the sitting — §2.5 shows this as "time taken". */
+  durationSec?: number;
   answers: AttemptAnswer[];
 }
 

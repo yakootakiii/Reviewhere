@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { CheckCircle2, FileText, Presentation, X } from "lucide-react";
 import { Button, IconButton } from "@/components/ui/button";
 import { ErrorPanel } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/components/auth/auth-provider";
+import { GenerateFlow } from "@/components/quiz/generate-flow";
 import { Dropzone } from "./dropzone";
 import { uploadDocument, type IngestResult } from "@/lib/firebase/documents";
 import { formatBytes } from "@/lib/documents-shared";
@@ -22,7 +22,6 @@ type Stage =
 export function UploadFlow() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
   const [stage, setStage] = useState<Stage>({ name: "idle" });
   const abortRef = useRef<(() => void) | null>(null);
 
@@ -102,13 +101,19 @@ export function UploadFlow() {
             </p>
           )}
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
-          <Button variant="secondary" onClick={() => setStage({ name: "idle" })}>
-            Upload another
-          </Button>
-          {/* Quiz generation settings arrive in M3. */}
-          <Button onClick={() => router.push("/library")}>Go to library</Button>
-        </div>
+        {/* §5: parsing done → straight into the generation settings sheet. */}
+        <GenerateFlow
+          document={{
+            id: result.documentId,
+            fileName: result.fileName,
+            pageCount: result.pageCount,
+            fileType: result.fileType,
+          }}
+          autoStart
+        />
+        <Button variant="ghost" size="sm" onClick={() => setStage({ name: "idle" })}>
+          Upload another
+        </Button>
       </div>
     );
   }
