@@ -27,7 +27,11 @@ Tests use **real file fixtures, not mocks** — [src/lib/extraction/fixtures.ts]
 
 Copy `.env.local.example` to `.env.local` and fill in the Firebase web config. Until that exists `isFirebaseConfigured` is false and the app renders a setup notice instead of crashing, so the shell stays browsable — keep that graceful path intact when adding Firebase-dependent features.
 
-`firestore.rules` and `storage.rules` are written but not yet deployed to a project.
+`firestore.rules` and `firestore.indexes.json` are **deployed** to `reviewhere-a1634`
+(`firebase deploy --only firestore`). Before changing rules, run `npm run test:rules` — the
+emulator suite asserts both what an owner may do and what a second user may not, and it caught
+six gaps the file's own comments claimed were closed. `storage.rules` remains undeployed and
+absent from `firebase.json`, because Storage is unused by decision.
 
 ## Build status
 
@@ -35,7 +39,20 @@ Copy `.env.local.example` to `.env.local` and fill in the Firebase web config. U
 
 **M2 (upload + parsing)** — done. Dropzone → `POST /api/documents` → server-side extraction → Firestore. Library and dashboard list real documents.
 
-Next is M3 (quiz generation, both modes).
+**M3 (quiz generation)** — done. `src/lib/generation/` holds the shared core; `POST /api/quizzes/generate` (Mode A, streams NDJSON progress) and `POST /api/quizzes/import` (Mode B) both persist through one `writeQuiz`. `/documents/[documentId]` is the per-document hub.
+
+**M4 (quiz-taking + results)** — done. `src/lib/quiz/` holds matching, scoring and the session; `/quizzes/[quizId]` is the overview with attempt history, `/quizzes/[quizId]/take` runs the quiz, `/attempts/[attemptId]` is the score and review screen. `feedbackMode` and `timerEnabled` are finally read here.
+
+**M5 (library + polish)** — done. [src/lib/library.ts](src/lib/library.ts) folds documents and quizzes into one searchable, taggable, sortable list behind `/library`; the ⌘K box now navigates there with `?q=`. Cards carry rename / tag / delete (and duplicate, for quizzes). One `LibraryCard` serves the library, the dashboard and the document hub.
+
+**M6 (launch hardening)** — done, and the roadmap is complete. `firestore.rules` moved from
+pinning a couple of fields to explicit allow-lists (`changesOnly`), attempts became write-once,
+and the whole file is now covered by emulator-backed tests in [rules/firestore.test.ts](rules/firestore.test.ts)
+— run them with `npm run test:rules` (needs Java; kept out of `npm test`, which stays fast).
+Rules and all 7 indexes are **deployed** to `reviewhere-a1634`.
+
+What is left is not milestones but choices: a deploy target that isn't capped at 4.5 MB (see
+below), and the four §2 features recorded as deferred in the spec's §9.1.
 
 ## Storage: text-only, by decision
 
@@ -68,16 +85,23 @@ This is the central architectural constraint. Question generation has two indepe
   type,question,choice_a,choice_b,choice_c,choice_d,correct_answer,accepted_answers,explanation,source_page
   ```
 
-  RFC 4180 quoting; `identification` rows leave the choice columns blank; `accepted_answers` is pipe-separated. The importer validates **row-by-row and surfaces bad rows in a preview** — never silently drop them.
+  RFC 4180 quoting; `identification` rows leave the choice columns blank; `accepted_answers` is pipe-separated. The importer validates **row-by-row and surfaces bad rows in a preview** — never silently drop them. Bad rows can be fixed inline, skipped, or replaced by re-importing a corrected file.
+
+**Where the single schema is actually enforced:** [src/lib/generation/questions.ts](src/lib/generation/questions.ts) holds one `validateQuestionRow`, and both modes go through it. It reads either naming style — `prompt`/`question`, `correct_answer`/`correctAnswer`, a `choices` array or `choice_a`…`choice_d` columns — so neither mode needs an adapter that could drift. Adding a field means adding it there, not in a mode-specific path. Question order is carried by zero-padded document ids (`q001`, `q002`) rather than an `order` field, so the §4 schema stays as written.
 
 ### Invariants worth preserving
 
 - **Server-side enforcement.** The 150-page cap is applied in [src/app/api/documents/route.ts](src/app/api/documents/route.ts) against a page count the server derives by parsing the file itself. The client never supplies it, and Firestore rules make `/documents` server-write-only so it cannot be forged. Keep it that way.
 - **Scan detection needs two signals.** A document is only rejected as image-only when it has no text *and* a near-zero average per page — the empty-page ratio alone falsely rejects slide decks made of short titles. There's a regression test for this.
-- **Identification matching is exact-match-with-typo-tolerance only.** Normalize case/whitespace/punctuation, then Levenshtein against `correctAnswer` + `acceptedAnswers` (start: ≤1 for answers under 8 chars, ≤2 above). Explicitly *not* synonym or partial-credit matching — do not "improve" this into fuzzy semantic matching.
+- **Identification matching is exact-match-with-typo-tolerance only.** Implemented in [src/lib/quiz/matching.ts](src/lib/quiz/matching.ts): normalize case/whitespace/punctuation, then Levenshtein against `correctAnswer` + `acceptedAnswers` (≤1 for answers under 8 chars, ≤2 above). Explicitly *not* synonym or partial-credit matching — `matching.test.ts` asserts that "powerhouse of the cell" does **not** match "mitochondria" and that "mito" does not match either. Those tests are the guard rail; if you find yourself deleting one to make a change pass, the change is wrong.
+- **Every "was this right?" answer comes from `checkAnswer`.** Scoring, the review screen and "retake incorrect only" all call it, so they cannot disagree about what counted.
+- **Only a question's first submission is scored.** Immediate mode lets a wrong identification answer be retried and revealed after two misses (§2.3); the retries teach, they don't score.
+- **Quiz session updates must be functional, never a spread of the render's `session`.** Answering and advancing happen in one handler, and two updates built from the same closure clobber each other — that shipped as "every end-of-quiz-mode attempt scores 0%". The reducers live in [src/lib/quiz/session.ts](src/lib/quiz/session.ts) (`recordAnswer`, `goToIndex`, `revealAnswer`) and compose through `usePersistedJson`'s updater form, which reads the latest stored value. Navigation steps *relative* to the stored index for the same reason: the outgoing card is briefly still mounted with stale handlers.
 - **Every question carries `sourcePage` and an `explanation`**, both surfaced in the review screen.
 - **Questions are interleaved by type by default**, not grouped, to mimic a real exam.
 - **Failed generation must not lose the document** — it stays in the library with a "regenerate" action.
+- **Deletes must go through the API, never `deleteDoc` from the client.** Firestore has no cascade and the `pages`/`questions` subcollections are `write: false`, so deleting a parent from the browser silently orphans every child row — which is exactly what M2–M4 did until M5 fixed it. `DELETE /api/documents/[documentId]` and `DELETE /api/quizzes/[quizId]` use the Admin SDK's `recursiveDelete`; both have tests asserting the children are gone, not just the parent.
+- **A quiz outlives its source document.** Questions are copied into `/quizzes/{id}/questions` at generation time, so deleting a document keeps its quizzes playable; only the page links go dead, and the quiz and attempt pages check for the document and degrade rather than linking into nothing.
 - **Single free tier, ~4–5 users.** No billing, plans, quotas, or upgrade UI. The only cap is a soft per-user daily Mode A limit as a code constant, for OpenRouter quota protection.
 - Offline/PWA support is explicitly out of scope.
 
@@ -91,4 +115,12 @@ Accessibility is a hard requirement, not polish: WCAG 2.1 AA contrast, visible f
 
 ## Open questions (§10)
 
-Unresolved in the spec — check with the user rather than deciding unilaterally: which free OpenRouter model to default to (availability shifts, so verify at build time), the final typo-tolerance thresholds, and whether CSV import allows re-uploading a corrected file or only inline row fixes.
+None outstanding. All five were resolved across M3–M5 and are recorded in the spec's §9 decisions
+log: the default OpenRouter model and chain, CSV bad-row repair, identification typo-tolerance
+bands, pause/resume storage, and how tagging and document deletion behave.
+
+Two are worth revisiting with real use rather than treating as settled: the **free model chain**
+(availability shifts — re-check it at build time, and `OPENROUTER_MODEL` overrides the head
+without a code change) and the **typo-tolerance bands**, which live in a single `allowedEdits`
+function for exactly that reason. Anything genuinely new and unresolved belongs in §10 and should
+go to the user rather than being decided unilaterally.

@@ -3,6 +3,12 @@ rules_version = '2';
 // Spec §3/§6: every document is private to its owner. Question generation and
 // page-count validation happen in trusted server code, so clients never write
 // quizzes or questions directly.
+//
+// Updates use allow-lists rather than pinning a field or two. Pinning states
+// what may *not* change and silently permits everything else — which is how
+// `status`, `fileType` and `generationMode` stayed client-writable through M5
+// despite comments claiming otherwise. `rules/firestore.test.ts` exercises this
+// file against the emulator in both directions; run `npm run test:rules`.
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() {
@@ -11,12 +17,24 @@ service cloud.firestore {
     function isOwner(uid) {
       return signedIn() && request.auth.uid == uid;
     }
+    /** True when an update touches nothing outside `fields`. */
+    function changesOnly(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+    /** §2.6 tags are chips, not a payload. */
+    function tagsWithinLimit() {
+      return !('tags' in request.resource.data)
+             || (request.resource.data.tags is list
+                 && request.resource.data.tags.size() <= 20);
+    }
 
     match /users/{uid} {
       allow read: if isOwner(uid);
-      // A user may edit their own profile but never reassign it.
       allow create: if isOwner(uid);
-      allow update: if isOwner(uid);
+      // The provider fields are refreshed on every sign-in by ensureUserProfile;
+      // everything else about a profile is fixed.
+      allow update: if isOwner(uid)
+                    && changesOnly(['displayName', 'email', 'photoURL', 'preferences']);
       allow delete: if isOwner(uid);
     }
 
@@ -24,10 +42,12 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.ownerId);
       // Created by the ingest route, which owns the extracted page count (§2.1).
       allow create: if false;
-      // Clients may rename or tag; status and pageCount stay server-owned.
+      // Renaming and tagging only: everything the server derived is immutable.
       allow update: if isOwner(resource.data.ownerId)
-                    && request.resource.data.ownerId == resource.data.ownerId
-                    && request.resource.data.pageCount == resource.data.pageCount;
+                    && changesOnly(['fileName', 'tags'])
+                    && tagsWithinLimit();
+      // Cleanup of the pages subcollection happens in DELETE /api/documents/[id];
+      // Firestore has no cascade, so a bare delete here would orphan the text.
       allow delete: if isOwner(resource.data.ownerId);
 
       // Extracted text, one document per page. Read-only to the owner.
@@ -37,10 +57,23 @@ service cloud.firestore {
       }
     }
 
+    // The soft daily Mode A cap (§3.2). Server-owned on purpose: /users/{uid} is
+    // client-writable, so a counter kept there could be reset by its owner.
+    match /usage/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
     match /quizzes/{quizId} {
       allow read: if isOwner(resource.data.ownerId);
-      allow update, delete: if isOwner(resource.data.ownerId);
-      // Created by Cloud Functions (Mode A) or the validated CSV import (Mode B).
+      // Title, tags, and the score saveAttempt records. How the quiz was made —
+      // its mix, difficulty, scope, model and generationMode — is history.
+      allow update: if isOwner(resource.data.ownerId)
+                    && changesOnly(['title', 'tags', 'lastAttemptScore'])
+                    && tagsWithinLimit();
+      allow delete: if isOwner(resource.data.ownerId);
+      // Written by /api/quizzes/generate (Mode A) and /api/quizzes/import (Mode B),
+      // both of which validate every question server-side before saving (§2.2).
       allow create: if false;
 
       match /questions/{questionId} {
@@ -49,11 +82,17 @@ service cloud.firestore {
       }
     }
 
+    // Attempts are write-once: the app records one and never revises it, so a
+    // score cannot be edited after the fact. Deleting a whole attempt is allowed.
     match /attempts/{attemptId} {
       allow read: if isOwner(resource.data.userId);
-      allow create: if isOwner(request.resource.data.userId);
-      allow update: if isOwner(resource.data.userId)
-                    && request.resource.data.userId == resource.data.userId;
+      allow create: if isOwner(request.resource.data.userId)
+                    && request.resource.data.quizId is string
+                    && request.resource.data.score is int
+                    && request.resource.data.score >= 0
+                    && request.resource.data.score <= 100
+                    && request.resource.data.answers is list;
+      allow update: if false;
       allow delete: if isOwner(resource.data.userId);
     }
   }

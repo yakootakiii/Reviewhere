@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, isAdminConfigured, uidFromAuthHeader } from "@/lib/firebase/admin";
+import { logRouteError } from "@/lib/log";
 import {
   assertHasText,
   assertWithinPageLimit,
@@ -97,7 +98,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ExtractionError) return fail(422, error.userMessage);
-    console.error("Document ingest failed", error);
+    logRouteError("documents.ingest", error, { uid });
     return fail(500, "Something went wrong reading that file. Please try again.");
   }
 }

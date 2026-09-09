@@ -285,9 +285,34 @@ Still worth having, purely for cost/abuse protection (not monetization):
 | Free vs. paid tiers | Fully free, single tier, no billing — built for ~4–5 users; only a soft anti-abuse daily cap on Mode A generations |
 | Identification matching | Exact-match with typo tolerance (small edit-distance allowance); no synonym/partial-credit matching |
 | Offline/PWA support | Out of scope |
+| Default Mode A model | `nvidia/nemotron-3-super-120b-a12b:free`, at the head of a fallback chain (→ `nex-agi/nex-n2.5-pro:free` → `dots-studio/dots-3-note-preview:free`), overridable with `OPENROUTER_MODEL`. Checked against OpenRouter's live model list on 2026-09-09: these are the free models advertising structured outputs. Availability failures walk down the chain; malformed JSON gets the one stricter retry from §2.2 |
+| CSV import repair | Both routes: bad rows are editable inline in the preview, a row can be deliberately skipped, and a corrected file can replace the whole import |
+| Identification typo tolerance | Fixed bands on the normalized answer: edit distance ≤1 under 8 characters, ≤2 at 8 and above. Applies to `correctAnswer` and every `acceptedAnswers` variant; never to multiple choice |
+| Pause/resume storage | localStorage per device, keyed `reviewhere:session:{quizId}`. No Firestore write per answer and no incomplete-attempt state in §4; a quiz does not follow the user to another device |
+| Scoring a retried question | Only the first submission counts. In immediate mode a wrong identification answer can be retried, and revealed after two misses (§2.3), but the score reflects the first answer |
+| Organising by subject (§2.6) | Free-form tags, many per item, on both documents and quizzes — not folders. No hierarchy to maintain and no empty-folder states to design |
+| Library contents | Documents and quizzes in one list behind an All / Documents / Quizzes filter, with client-side search, tag chips, sort, and a grid/list toggle |
+| Deleting a document | Keeps the quizzes generated from it: their questions were copied in at generation time, so they stay playable. Only the page links go dead, and the confirm dialog says so. Deletion runs server-side with `recursiveDelete` so the extracted page text goes with it |
+
+## 9.1 Deferred — asked for in §2, not built
+
+Recorded here so the gap between the spec and the build is written down rather than assumed.
+None of these block the app being used; each is a deliberate "not now", revisit if a real user
+asks for it.
+
+| Deferred | Where it's asked for | Why not, and what happens instead |
+|---|---|---|
+| OCR fallback for scanned PDFs | §2.1, §3 | The largest lift on this list (a Tesseract pipeline or a paid API) for a case none of the five users has hit. A scan is detected and rejected with copy explaining why (`assertHasText`), rather than failing mysteriously |
+| `.ppt` support via conversion | §2.1 | Needs a conversion step — LibreOffice or a service — for a format nobody has uploaded. `.ppt` is rejected explicitly, with a test pinning that behaviour |
+| "Select all that apply" MCQ | §2.3 | Marked optional in the spec. Every layer — the generator prompts, the CSV contract, `checkAnswer`, scoring — assumes one correct answer, so this is a change to the schema, not a UI toggle |
+| Results breakdown by topic/section | §2.5 | The by-type half is built. Topics would need the generator to label each question with one, which neither mode does today, and free models are unreliable at consistent taxonomies |
 
 ## 10. Remaining Open Questions
 
-- Exact free OpenRouter model(s) to default to — worth re-checking at build time since free-tier model availability shifts.
-- Exact typo-tolerance threshold for identification answers (e.g., fixed edit distance vs. scaled by answer length) — recommend starting with edit distance ≤1 for answers under 8 characters and ≤2 above that, then tuning by feel.
-- Should Mode B's CSV import also accept re-uploading a corrected CSV after validation errors, or only inline row fixes?
+None outstanding — every question originally listed here is resolved and recorded in §9: the
+default OpenRouter model and the CSV repair routes (M3), and the identification typo-tolerance
+bands and pause/resume storage (M4).
+
+The typo-tolerance bands are the one decision worth revisiting with real use: they were chosen as
+a starting point to tune by feel, and [src/lib/quiz/matching.ts](src/lib/quiz/matching.ts) keeps
+them in a single `allowedEdits` function for exactly that reason.
