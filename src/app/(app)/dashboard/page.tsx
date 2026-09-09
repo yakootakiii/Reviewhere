@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { FolderOpen, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EmptyState } from "@/components/ui/feedback";
+import { DocumentGrid } from "@/components/library/document-grid";
 import { useAuth } from "@/components/auth/auth-provider";
 
 export default function DashboardPage() {
@@ -16,7 +16,7 @@ export default function DashboardPage() {
         <div className="flex flex-col gap-1">
           <h1 className="text-display">{firstName ? `Hi, ${firstName}` : "My Reviewers"}</h1>
           <p className="text-callout text-secondary">
-            Upload a document to generate your first reviewer.
+            Pick up a reviewer, or upload something new.
           </p>
         </div>
         <Link href="/create">
@@ -27,17 +27,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* M2–M5 replace this with the real document/quiz grid. */}
-      <EmptyState
-        icon={<FolderOpen className="size-6" />}
-        title="No reviewers yet"
-        description="Upload a PDF or PowerPoint and Reviewhere will turn it into a quiz you can take right away."
-        action={
-          <Link href="/create">
-            <Button>Upload your first document</Button>
-          </Link>
-        }
-      />
+      <DocumentGrid max={6} />
     </div>
   );
 }
