@@ -148,25 +148,62 @@ export function LibraryCard({
     );
   }
 
+  // A widget rather than a card: a square tile with a label at the top, the
+  // one number that matters in the middle, and identity at the foot. The
+  // proportions do the work, so it needs no border or shadow to read as an
+  // object — a fill against the page is enough.
+  const metric =
+    item.kind === "quiz"
+      ? { value: item.quiz.questionCount, label: "questions" }
+      : {
+          value: item.document.pageCount,
+          label: item.document.fileType === "pptx" ? "slides" : "pages",
+        };
+
   return (
-    <div className="group relative flex h-full flex-col rounded-lg bg-surface hairline p-4 transition-colors duration-150 hover:border-[var(--color-border-strong)]">
-      <div className="flex items-start gap-2">
-        <Link href={item.href} className="min-w-0 flex-1 rounded-sm outline-offset-4">
-          <span className="flex items-center gap-2">
-            <KindMark item={item} />
-            <span className="truncate text-callout font-medium">{item.title}</span>
+    <div className="group relative flex aspect-square flex-col rounded-2xl bg-surface-secondary p-4">
+      <div className="flex items-start justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-caption text-tertiary">
+          <KindMark item={item} />
+          {item.kind === "quiz" ? "Quiz" : item.document.fileType === "pptx" ? "PPTX" : "PDF"}
+        </span>
+        {actions && (
+          <span className="relative z-10 -mt-1 -mr-1">
+            <Actions item={item} onAction={actions} />
           </span>
-          <Meta item={item} />
-        </Link>
-        {actions && <Actions item={item} onAction={actions} />}
+        )}
       </div>
 
-      {(item.tags.length > 0 || score) && (
-        <div className="mt-6 flex items-end justify-between gap-3">
-          <Tags tags={item.tags} />
-          {score}
+      <div className="mt-auto flex flex-col gap-3">
+        <p className="flex items-baseline gap-1.5">
+          <span className="text-[34px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
+            {metric.value}
+          </span>
+          <span className="text-caption text-tertiary">{metric.label}</span>
+        </p>
+
+        <div className="flex flex-col gap-0.5">
+          <Link href={item.href} className="rounded-sm outline-offset-4">
+            {/* The whole tile is clickable via this overlay, so the link text
+                stays the accessible name without a second nested control. */}
+            <span className="absolute inset-0" aria-hidden />
+            <span className="line-clamp-2 [overflow-wrap:anywhere] text-callout font-medium">
+              {item.title}
+            </span>
+          </Link>
+          <p className="truncate text-caption text-tertiary">{tileMeta(item)}</p>
         </div>
-      )}
+      </div>
     </div>
   );
+}
+
+/** The supporting line under a tile's title — whatever the metric didn't say. */
+function tileMeta(item: LibraryItem): string {
+  if (item.kind === "quiz") {
+    if (item.shared) return item.subtitle.split(" · ").slice(1).join(" · ");
+    return item.score !== null ? `Last score ${item.score}%` : formatDate(item.createdAt);
+  }
+  const count = item.quizCount;
+  return `${count} quiz${count === 1 ? "" : "zes"} · ${formatDate(item.createdAt)}`;
 }

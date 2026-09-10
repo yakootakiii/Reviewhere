@@ -32,13 +32,18 @@ export function Skeleton({ className }: { className?: string }) {
   );
 }
 
-/** Mirrors the real card's proportions so nothing jumps when content lands. */
+/** Mirrors the widget tile's proportions so nothing jumps when content lands. */
 export function CardSkeleton() {
   return (
-    <div className="rounded-lg bg-surface hairline p-4">
-      <Skeleton className="h-4 w-2/3" />
-      <Skeleton className="mt-2.5 h-3 w-2/5" />
-      <Skeleton className="mt-8 h-3 w-1/4" />
+    <div className="flex aspect-square flex-col rounded-2xl bg-surface-secondary p-4">
+      <Skeleton className="h-3 w-10 opacity-60" />
+      <div className="mt-auto flex flex-col gap-3">
+        <Skeleton className="h-7 w-16 opacity-60" />
+        <div className="flex flex-col gap-1.5">
+          <Skeleton className="h-3.5 w-4/5 opacity-60" />
+          <Skeleton className="h-3 w-1/2 opacity-60" />
+        </div>
+      </div>
     </div>
   );
 }

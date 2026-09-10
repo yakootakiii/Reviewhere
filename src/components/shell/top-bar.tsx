@@ -35,15 +35,19 @@ export function TopBar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex h-14 items-center gap-3 px-5 transition-colors duration-200 sm:px-8",
+        // Three columns rather than a flex row: the search stays optically
+        // centred no matter how wide the wordmark or the avatar happen to be.
+        "sticky top-0 z-30 grid h-14 grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 transition-colors duration-200 sm:px-8",
         scrolled
           ? "surface-blur border-b border-[var(--color-border)]"
           : "border-b border-transparent bg-[var(--color-bg)]",
       )}
     >
-      <Link href="/dashboard" className="text-callout font-semibold tracking-[-0.01em] lg:hidden">
-        Reviewhere<span className="text-[var(--color-accent)]">.</span>
-      </Link>
+      <div className="flex min-w-0 justify-start">
+        <Link href="/dashboard" className="text-callout font-semibold tracking-[-0.01em] lg:hidden">
+          Reviewhere<span className="text-[var(--color-accent)]">.</span>
+        </Link>
+      </div>
 
       <form
         role="search"
@@ -53,7 +57,7 @@ export function TopBar() {
           // any page lands there already filtered.
           router.push(query.trim() ? `/library?q=${encodeURIComponent(query.trim())}` : "/library");
         }}
-        className="relative ml-auto hidden max-w-sm flex-1 items-center sm:flex lg:ml-0"
+        className="relative hidden w-[min(28rem,60vw)] items-center sm:flex"
       >
         <Search aria-hidden className="pointer-events-none absolute left-3 size-4 text-tertiary" />
         <input
@@ -78,7 +82,7 @@ export function TopBar() {
         </kbd>
       </form>
 
-      <div className="ml-auto flex items-center gap-1 lg:ml-4">
+      <div className="flex items-center justify-end">
         <UserMenu />
       </div>
     </header>

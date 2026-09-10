@@ -238,10 +238,10 @@ Still worth having, purely for cost/abuse protection (not monetization):
 - Sheets (bottom sheet on mobile, centered modal on desktop) for quiz settings, not full page navigation.
 
 ### 7.4 Component Inventory
-- **Navigation bar** — logo/wordmark, search, profile avatar menu; translucent/blurred on scroll.
-- **Sidebar** (desktop) — Dashboard, Library, Create New, Settings; collapsible.
+- **Navigation bar** — search centred, profile avatar menu hard right, wordmark at the left on mobile only; translucent/blurred on scroll.
+- **Sidebar** (desktop) — Dashboard, Library, Create New; collapsible. Settings is reached from the account menu instead (Profile and Preferences both open it), so the nav doesn't duplicate a destination you find under your own avatar.
 - **Buttons** — Primary (gradient or solid accent fill), Secondary (outline/tinted), Destructive (red), Icon-only (circular, tinted background).
-- **Cards** — Document card, Quiz card, Stat card; consistent 20px radius, hairline border, hover elevation.
+- **Cards** — one `LibraryCard` serves documents and quizzes in two shapes: a **square widget tile** in grid view (a label at the top, the single number that matters, then identity at the foot — the proportions carry it, so no border or shadow is needed) and a plain row in list view, where the dividers belong to the list rather than to each item.
 - **Inputs** — Text field, textarea, file dropzone, all 12px radius with floating/inline labels and clear error text.
 - **Search** — Global search bar with icon, subtle inset shadow, keyboard shortcut hint (⌘K).
 - **Tabs / Segmented controls** — for quiz-type filters, settings sections.

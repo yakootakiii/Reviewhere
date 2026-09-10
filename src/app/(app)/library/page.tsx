@@ -355,7 +355,7 @@ function Library() {
           className={cn(
             "mt-8",
             view === "grid"
-              ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+              ? "grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4"
               : "divide-y divide-[var(--color-border)] border-b border-[var(--color-border)]",
           )}
         >
@@ -418,7 +418,8 @@ function LibrarySkeleton() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col" aria-busy="true">
       <h1 className="text-display">Library</h1>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+        <CardSkeleton />
         <CardSkeleton />
         <CardSkeleton />
         <CardSkeleton />

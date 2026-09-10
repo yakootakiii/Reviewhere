@@ -29,7 +29,7 @@ export default function DashboardPage() {
 
       <div className="mt-12">
         <h2 className="mb-5 text-caption tracking-[0.06em] text-tertiary uppercase">Recent</h2>
-        <RecentItems max={6} />
+        <RecentItems max={8} />
       </div>
     </div>
   );

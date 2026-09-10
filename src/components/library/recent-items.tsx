@@ -21,7 +21,7 @@ type State =
  * §2.6's dashboard grid: the most recent documents and quizzes together. Cards
  * are read-only here — managing things is the Library's job.
  */
-export function RecentItems({ max = 6 }: { max?: number }) {
+export function RecentItems({ max = 8 }: { max?: number }) {
   const { user } = useAuth();
   const [state, setState] = useState<State>({ name: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
@@ -61,7 +61,8 @@ export function RecentItems({ max = 6 }: { max?: number }) {
 
   if (state.name === "loading") {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-busy="true">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4" aria-busy="true">
+        <CardSkeleton />
         <CardSkeleton />
         <CardSkeleton />
         <CardSkeleton />
@@ -105,7 +106,7 @@ export function RecentItems({ max = 6 }: { max?: number }) {
   }
 
   return (
-    <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
       {items.map((item) => (
         <li key={`${item.kind}-${item.id}`}>
           <LibraryCard item={item} view="grid" />
