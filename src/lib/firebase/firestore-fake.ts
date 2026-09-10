@@ -11,6 +11,7 @@ export interface FakeDocRef {
   path: string;
   get(): Promise<{ exists: boolean; id: string; data(): Record<string, unknown> | undefined }>;
   set(data: Record<string, unknown>): Promise<void>;
+  update(patch: Record<string, unknown>): Promise<void>;
   collection(name: string): FakeCollectionRef;
 }
 
@@ -18,8 +19,10 @@ export interface FakeSnapshot {
   docs: { id: string; ref: FakeDocRef; data(): Record<string, unknown> }[];
 }
 
+export type FakeOperator = "==" | "array-contains";
+
 export interface FakeQuery {
-  where(field: string, op: "==", value: unknown): FakeQuery;
+  where(field: string, op: FakeOperator, value: unknown): FakeQuery;
   get(): Promise<FakeSnapshot>;
 }
 
@@ -44,6 +47,23 @@ export function createFakeFirestore() {
       async set(data) {
         docs.set(path, data);
       },
+      /** Merges, resolving the array sentinels the share route writes. */
+      async update(patch: Record<string, unknown>) {
+        const current = { ...(docs.get(path) ?? {}) };
+        for (const [key, value] of Object.entries(patch)) {
+          const sentinel = value as { __op?: string; values?: unknown[] } | null;
+          if (sentinel && typeof sentinel === "object" && sentinel.__op === "arrayUnion") {
+            const existing = Array.isArray(current[key]) ? (current[key] as unknown[]) : [];
+            current[key] = [...existing, ...(sentinel.values ?? []).filter((v) => !existing.includes(v))];
+          } else if (sentinel && typeof sentinel === "object" && sentinel.__op === "arrayRemove") {
+            const existing = Array.isArray(current[key]) ? (current[key] as unknown[]) : [];
+            current[key] = existing.filter((v) => !(sentinel.values ?? []).includes(v));
+          } else {
+            current[key] = value;
+          }
+        }
+        docs.set(path, current);
+      },
       collection: (name: string) => collectionRef(`${path}/${name}`),
     };
   }
@@ -58,14 +78,20 @@ export function createFakeFirestore() {
 
   function query(
     path: string,
-    filters: { field: string; value: unknown }[],
+    filters: { field: string; op: FakeOperator; value: unknown }[],
   ): FakeQuery {
     return {
-      where: (field: string, _op: "==", value: unknown) =>
-        query(path, [...filters, { field, value }]),
+      where: (field: string, op: FakeOperator, value: unknown) =>
+        query(path, [...filters, { field, op, value }]),
       async get() {
         const entries = childEntries(path).filter(([, data]) =>
-          filters.every((filter) => data[filter.field] === filter.value),
+          filters.every((filter) => {
+            const actual = data[filter.field];
+            if (filter.op === "array-contains") {
+              return Array.isArray(actual) && actual.includes(filter.value);
+            }
+            return actual === filter.value;
+          }),
         );
         return {
           docs: entries.map(([key, data]) => ({

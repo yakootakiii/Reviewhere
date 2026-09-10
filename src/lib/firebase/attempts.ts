@@ -44,11 +44,15 @@ export async function saveAttempt(
     answers: result.answers,
   });
 
-  // Best-effort: the attempt is the record of truth, and the quiz field is a
-  // convenience for the library card (§2.6).
-  updateDoc(doc(firestore(), "quizzes", quiz.id), { lastAttemptScore: result.score }).catch(
-    () => {},
-  );
+  // Only the owner's own sitting updates the quiz's last score: a recipient
+  // taking a shared quiz is not the owner's result, and the rules would reject
+  // the write anyway — relying on a swallowed permission error to enforce that
+  // is not the same as meaning it.
+  if (quiz.ownerId === user.uid) {
+    updateDoc(doc(firestore(), "quizzes", quiz.id), { lastAttemptScore: result.score }).catch(
+      () => {},
+    );
+  }
 
   return { attemptId: reference.id, score: result.score };
 }

@@ -8,13 +8,13 @@ import { CardSkeleton, EmptyState, ErrorPanel } from "@/components/ui/feedback";
 import { useAuth } from "@/components/auth/auth-provider";
 import { LibraryCard } from "./library-card";
 import { listDocuments } from "@/lib/firebase/documents";
-import { listQuizzes } from "@/lib/firebase/quizzes";
+import { listQuizzes, listSharedQuizzes } from "@/lib/firebase/quizzes";
 import { buildLibraryItems, sortItems } from "@/lib/library";
 import type { Quiz, StudyDocument } from "@/lib/types";
 
 type State =
   | { name: "loading" }
-  | { name: "ready"; documents: StudyDocument[]; quizzes: Quiz[] }
+  | { name: "ready"; documents: StudyDocument[]; quizzes: Quiz[]; shared: Quiz[] }
   | { name: "error" };
 
 /**
@@ -30,9 +30,14 @@ export function RecentItems({ max = 6 }: { max?: number }) {
     if (!user) return;
     let active = true;
 
-    Promise.all([listDocuments(user.uid, max), listQuizzes(user.uid, max)])
-      .then(([documents, quizzes]) => {
-        if (active) setState({ name: "ready", documents, quizzes });
+    Promise.all([
+      listDocuments(user.uid, max),
+      listQuizzes(user.uid, max),
+      // Same as the library: a shared-list failure must not blank the dashboard.
+      listSharedQuizzes(user.uid, max).catch(() => [] as Quiz[]),
+    ])
+      .then(([documents, quizzes, shared]) => {
+        if (active) setState({ name: "ready", documents, quizzes, shared });
       })
       .catch(() => {
         if (active) setState({ name: "error" });
@@ -46,7 +51,10 @@ export function RecentItems({ max = 6 }: { max?: number }) {
   const items = useMemo(
     () =>
       state.name === "ready"
-        ? sortItems(buildLibraryItems(state.documents, state.quizzes), "recent").slice(0, max)
+        ? sortItems(
+            buildLibraryItems(state.documents, state.quizzes, state.shared),
+            "recent",
+          ).slice(0, max)
         : [],
     [state, max],
   );

@@ -3,9 +3,10 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, History, Play, Trash2 } from "lucide-react";
+import { ArrowLeft, History, Play, Share2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { ShareSheet } from "@/components/quiz/share-sheet";
 import { CardSkeleton, EmptyState, ErrorPanel } from "@/components/ui/feedback";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { useToast } from "@/components/ui/toast";
@@ -44,6 +45,7 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
   const [state, setState] = useState<State>({ name: "loading" });
   const [session, setSession] = usePersistedJson<QuizSession | null>(sessionKey(quizId), null);
   const [removing, setRemoving] = useState<Attempt | null>(null);
+  const [sharing, setSharing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -113,6 +115,8 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
   }
 
   const { quiz, questions, attempts, sourceExists } = state;
+  // A recipient sees the quiz but none of the owner's controls.
+  const isOwner = quiz.ownerId === user?.uid;
   const allIds = questions.map((question) => question.id);
   const resumable = isUsableSession(session, quizId, allIds) ? session : null;
   const best = bestScore(attempts);
@@ -125,7 +129,7 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-14">
       <div className="flex flex-col gap-5">
-        {sourceExists ? (
+        {sourceExists && isOwner ? (
           <Link
             href={`/documents/${quiz.documentId}`}
             className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-secondary hover:text-primary"
@@ -151,8 +155,8 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
             {describeScope(quiz.scope ?? null)}
           </p>
           <p className="text-caption text-tertiary">
-            {describeGenerationMode(quiz.generationMode)}
-            {!sourceExists && " · source document deleted"}
+            {isOwner ? describeGenerationMode(quiz.generationMode) : `Shared by ${quiz.ownerName ?? "someone"}`}
+            {isOwner && !sourceExists && " · source document deleted"}
           </p>
         </div>
 
@@ -184,6 +188,12 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
             <Button onClick={() => start(true)}>
               <Play aria-hidden className="size-4" />
               {attempts.length > 0 ? "Take it again" : "Start quiz"}
+            </Button>
+          )}
+          {isOwner && (
+            <Button variant="secondary" onClick={() => setSharing(true)}>
+              <Share2 aria-hidden className="size-4" />
+              Share
             </Button>
           )}
         </div>
@@ -236,6 +246,15 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
           </ul>
         )}
       </section>
+
+      {isOwner && (
+        <ShareSheet
+          open={sharing}
+          onClose={() => setSharing(false)}
+          quizId={quiz.id}
+          quizTitle={quiz.title}
+        />
+      )}
 
       {removing && (
         <ConfirmDialog

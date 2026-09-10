@@ -23,6 +23,7 @@ import {
   deleteQuiz,
   duplicateQuiz,
   listQuizzes,
+  listSharedQuizzes,
   renameQuiz,
   updateQuizTags,
 } from "@/lib/firebase/quizzes";
@@ -42,7 +43,7 @@ import type { Quiz, StudyDocument } from "@/lib/types";
 type State =
   | { name: "loading" }
   | { name: "error" }
-  | { name: "ready"; documents: StudyDocument[]; quizzes: Quiz[] };
+  | { name: "ready"; documents: StudyDocument[]; quizzes: Quiz[]; shared: Quiz[] };
 
 type Dialog =
   | { name: "none" }
@@ -83,9 +84,16 @@ function Library() {
     if (!user) return;
     let active = true;
 
-    Promise.all([listDocuments(user.uid, 200), listQuizzes(user.uid, 200)])
-      .then(([documents, quizzes]) => {
-        if (active) setState({ name: "ready", documents, quizzes });
+    Promise.all([
+      listDocuments(user.uid, 200),
+      listQuizzes(user.uid, 200),
+      // Your own library must not depend on the shared query succeeding — it
+      // needs its own index, and a cold or rebuilding index shouldn't blank
+      // the page. Degrade to "nothing shared" instead.
+      listSharedQuizzes(user.uid, 200).catch(() => [] as Quiz[]),
+    ])
+      .then(([documents, quizzes, shared]) => {
+        if (active) setState({ name: "ready", documents, quizzes, shared });
       })
       .catch(() => {
         if (active) setState({ name: "error" });
@@ -98,7 +106,9 @@ function Library() {
 
   const items = useMemo(
     () =>
-      state.name === "ready" ? buildLibraryItems(state.documents, state.quizzes) : [],
+      state.name === "ready"
+        ? buildLibraryItems(state.documents, state.quizzes, state.shared)
+        : [],
     [state],
   );
   const tags = useMemo(() => allTags(items), [items]);

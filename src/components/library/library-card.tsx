@@ -123,6 +123,9 @@ export function LibraryCard({
   /** Omit to render a read-only item, as the dashboard does. */
   onAction?: (action: CardAction, item: LibraryItem) => void;
 }) {
+  // Every action in the menu is one a recipient may not perform, so a shared
+  // quiz simply doesn't get one.
+  const actions = item.kind === "quiz" && item.shared ? undefined : onAction;
   const score =
     item.kind === "quiz" && item.score !== null ? (
       <span className="shrink-0 text-caption text-secondary tabular-nums">{item.score}%</span>
@@ -140,7 +143,7 @@ export function LibraryCard({
         </Link>
         <Tags tags={item.tags} className="hidden sm:flex" />
         {score}
-        {onAction && <Actions item={item} onAction={onAction} />}
+        {actions && <Actions item={item} onAction={actions} />}
       </div>
     );
   }
@@ -155,7 +158,7 @@ export function LibraryCard({
           </span>
           <Meta item={item} />
         </Link>
-        {onAction && <Actions item={item} onAction={onAction} />}
+        {actions && <Actions item={item} onAction={actions} />}
       </div>
 
       {(item.tags.length > 0 || score) && (

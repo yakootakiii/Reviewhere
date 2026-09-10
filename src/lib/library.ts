@@ -33,6 +33,8 @@ export interface QuizItem extends LibraryItemBase {
   kind: "quiz";
   quiz: Quiz;
   score: number | null;
+  /** Someone else's quiz, shared with this user. Read and take only. */
+  shared: boolean;
 }
 
 export type LibraryItem = DocumentItem | QuizItem;
@@ -45,6 +47,8 @@ function toMillis(value: { toDate?: () => Date } | null | undefined): number {
 export function buildLibraryItems(
   documents: StudyDocument[],
   quizzes: Quiz[],
+  /** Quizzes other people shared; listed alongside, but never mistakable for your own. */
+  sharedQuizzes: Quiz[] = [],
 ): LibraryItem[] {
   const quizCounts = new Map<string, number>();
   for (const quiz of quizzes) {
@@ -67,20 +71,30 @@ export function buildLibraryItems(
     };
   });
 
-  const quizItems: LibraryItem[] = quizzes.map((quiz) => ({
+  const toQuizItem = (quiz: Quiz, shared: boolean): LibraryItem => ({
     kind: "quiz",
     id: quiz.id,
     title: quiz.title,
     // The mix belongs on the quiz page; on a card it only crowds out the date.
-    subtitle: `${quiz.questionCount} questions`,
-    tags: quiz.tags ?? [],
+    subtitle: shared
+      ? `${quiz.questionCount} questions · Shared by ${quiz.ownerName ?? "someone"}`
+      : `${quiz.questionCount} questions`,
+    // A shared quiz carries the owner's tags, which aren't the recipient's to
+    // filter by or edit, so they don't travel.
+    tags: shared ? [] : (quiz.tags ?? []),
     href: `/quizzes/${quiz.id}`,
     createdAt: toMillis(quiz.createdAt),
     quiz,
-    score: quiz.lastAttemptScore ?? null,
-  }));
+    // lastAttemptScore is the owner's; a recipient's own score isn't on the quiz.
+    score: shared ? null : (quiz.lastAttemptScore ?? null),
+    shared,
+  });
 
-  return [...documentItems, ...quizItems];
+  return [
+    ...documentItems,
+    ...quizzes.map((quiz) => toQuizItem(quiz, false)),
+    ...sharedQuizzes.map((quiz) => toQuizItem(quiz, true)),
+  ];
 }
 
 /** Case- and punctuation-insensitive, so "week 3" finds "Week-3". */

@@ -21,6 +21,22 @@ service cloud.firestore {
     function changesOnly(fields) {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
     }
+    /**
+     * A quiz may be shared with named people (uids only — the array is readable
+     * by every recipient, so addresses would leak them to each other). Sharing
+     * grants read on the quiz and its questions and nothing else.
+     */
+    function sharedWithMe() {
+      return signedIn()
+             && 'sharedWith' in resource.data
+             && request.auth.uid in resource.data.sharedWith;
+    }
+    function sharedOn(quizData) {
+      return signedIn()
+             && 'sharedWith' in quizData
+             && request.auth.uid in quizData.sharedWith;
+    }
+
     /** §2.6 tags are chips, not a payload. */
     function tagsWithinLimit() {
       return !('tags' in request.resource.data)
@@ -65,9 +81,10 @@ service cloud.firestore {
     }
 
     match /quizzes/{quizId} {
-      allow read: if isOwner(resource.data.ownerId);
+      allow read: if isOwner(resource.data.ownerId) || sharedWithMe();
       // Title, tags, and the score saveAttempt records. How the quiz was made —
-      // its mix, difficulty, scope, model and generationMode — is history.
+      // its mix, difficulty, scope, model and generationMode — is history, and
+      // `sharedWith` is absent here on purpose: sharing goes through the API.
       allow update: if isOwner(resource.data.ownerId)
                     && changesOnly(['title', 'tags', 'lastAttemptScore'])
                     && tagsWithinLimit();
@@ -77,7 +94,8 @@ service cloud.firestore {
       allow create: if false;
 
       match /questions/{questionId} {
-        allow read: if isOwner(get(/databases/$(database)/documents/quizzes/$(quizId)).data.ownerId);
+        allow read: if isOwner(get(/databases/$(database)/documents/quizzes/$(quizId)).data.ownerId)
+                    || sharedOn(get(/databases/$(database)/documents/quizzes/$(quizId)).data);
         allow write: if false;
       }
     }

@@ -190,3 +190,48 @@ describe("cleanTag", () => {
     expect(cleanTag("x".repeat(40))).toHaveLength(24);
   });
 });
+
+describe("shared quizzes", () => {
+  const mine = quiz("quiz-1", "My reviewer", ["Biology"], 80, 2_000);
+  const theirs: Quiz = {
+    ...quiz("quiz-2", "Their reviewer", ["Their tag"], 90, 5_000),
+    ownerId: "user-2",
+    ownerName: "Ana",
+    sharedWith: ["user-1"],
+  };
+  const items = buildLibraryItems([], [mine], [theirs]);
+
+  it("lists shared quizzes alongside your own", () => {
+    expect(items.map((item) => item.id)).toEqual(["quiz-1", "quiz-2"]);
+  });
+
+  it("marks which are shared", () => {
+    const [own, shared] = items;
+    expect(own.kind === "quiz" && own.shared).toBe(false);
+    expect(shared.kind === "quiz" && shared.shared).toBe(true);
+  });
+
+  it("names who shared it, so a borrowed quiz isn't mistaken for your own", () => {
+    expect(items[1].subtitle).toContain("Shared by Ana");
+  });
+
+  it("falls back gracefully when the owner's name was never stamped", () => {
+    const anonymous = { ...theirs, ownerName: undefined };
+    expect(buildLibraryItems([], [], [anonymous])[0].subtitle).toContain("Shared by someone");
+  });
+
+  /** The owner's score is not the recipient's, and their tags aren't either. */
+  it("does not carry the owner's score or tags onto a shared quiz", () => {
+    const shared = items[1];
+    expect(shared.kind === "quiz" && shared.score).toBeNull();
+    expect(shared.tags).toEqual([]);
+  });
+
+  it("still finds a shared quiz by title", () => {
+    expect(filterItems(items, { query: "their" }).map((item) => item.id)).toEqual(["quiz-2"]);
+  });
+
+  it("treats an absent shared list as none", () => {
+    expect(buildLibraryItems([], [mine])).toHaveLength(1);
+  });
+});

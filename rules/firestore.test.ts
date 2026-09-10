@@ -19,6 +19,7 @@ let env: RulesTestEnvironment;
 
 const OWNER = "user-owner";
 const OTHER = "user-other";
+const FRIEND = "user-friend";
 
 beforeAll(async () => {
   env = await initializeTestEnvironment({
@@ -66,6 +67,23 @@ beforeEach(async () => {
       tags: [],
     });
     await setDoc(doc(db, "quizzes", "quiz-1", "questions", "q001"), { type: "mcq", prompt: "?" });
+    await setDoc(doc(db, "quizzes", "quiz-shared"), {
+      ownerId: OWNER,
+      documentId: "doc-1",
+      title: "Shared reviewer",
+      questionCount: 1,
+      mix: { mcqPct: 100, idPct: 0 },
+      difficulty: "medium",
+      generationMode: "auto",
+      lastAttemptScore: null,
+      tags: [],
+      sharedWith: [FRIEND],
+      ownerName: "Owner",
+    });
+    await setDoc(doc(db, "quizzes", "quiz-shared", "questions", "q001"), {
+      type: "mcq",
+      prompt: "Shared question",
+    });
     await setDoc(doc(db, "attempts", "attempt-1"), {
       userId: OWNER,
       quizId: "quiz-1",
@@ -78,6 +96,7 @@ beforeEach(async () => {
 
 const owner = () => env.authenticatedContext(OWNER).firestore();
 const other = () => env.authenticatedContext(OTHER).firestore();
+const friend = () => env.authenticatedContext(FRIEND).firestore();
 const guest = () => env.unauthenticatedContext().firestore();
 
 describe("documents", () => {
@@ -153,6 +172,66 @@ describe("quizzes", () => {
     await assertFails(
       setDoc(doc(owner(), "quizzes", "quiz-1", "questions", "q001"), { prompt: "forged" }),
     );
+  });
+});
+
+describe("sharing", () => {
+  it("lets a named recipient read the quiz and its questions", async () => {
+    await assertSucceeds(getDoc(doc(friend(), "quizzes", "quiz-shared")));
+    await assertSucceeds(getDoc(doc(friend(), "quizzes", "quiz-shared", "questions", "q001")));
+  });
+
+  it("grants nothing on quizzes that were not shared with them", async () => {
+    await assertFails(getDoc(doc(friend(), "quizzes", "quiz-1")));
+    await assertFails(getDoc(doc(friend(), "quizzes", "quiz-1", "questions", "q001")));
+  });
+
+  it("leaves everyone else out, signed in or not", async () => {
+    await assertFails(getDoc(doc(other(), "quizzes", "quiz-shared")));
+    await assertFails(getDoc(doc(guest(), "quizzes", "quiz-shared")));
+    await assertFails(getDoc(doc(other(), "quizzes", "quiz-shared", "questions", "q001")));
+  });
+
+  /** Sharing grants reading. It must not grant anything else. */
+  it("does not let a recipient change or remove the quiz", async () => {
+    const ref = doc(friend(), "quizzes", "quiz-shared");
+    await assertFails(updateDoc(ref, { title: "Mine now" }));
+    await assertFails(updateDoc(ref, { tags: ["theirs"] }));
+    await assertFails(updateDoc(ref, { lastAttemptScore: 100 }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  /** Sharing is granted through the API, so the array is not client-writable. */
+  it("does not let anyone edit the recipient list, including the owner", async () => {
+    await assertFails(updateDoc(doc(friend(), "quizzes", "quiz-shared"), { sharedWith: [FRIEND, OTHER] }));
+    await assertFails(updateDoc(doc(owner(), "quizzes", "quiz-shared"), { sharedWith: [] }));
+  });
+
+  it("lets a recipient record their own attempt at a shared quiz", async () => {
+    await assertSucceeds(
+      addDoc(collection(friend(), "attempts"), {
+        userId: FRIEND,
+        quizId: "quiz-shared",
+        score: 70,
+        answers: [],
+      }),
+    );
+  });
+
+  it("keeps the owner's attempts private from the recipient, and the reverse", async () => {
+    await assertFails(getDoc(doc(friend(), "attempts", "attempt-1")));
+  });
+
+  it("revokes the read as soon as the recipient is removed", async () => {
+    await env.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), "quizzes", "quiz-shared"),
+        { sharedWith: [] },
+        { merge: true },
+      );
+    });
+    await assertFails(getDoc(doc(friend(), "quizzes", "quiz-shared")));
+    await assertFails(getDoc(doc(friend(), "quizzes", "quiz-shared", "questions", "q001")));
   });
 });
 

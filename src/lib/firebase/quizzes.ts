@@ -14,6 +14,7 @@ import type { User } from "firebase/auth";
 import { firestore } from "./client";
 import type { CsvValues } from "@/lib/generation/csv-import";
 import type { GenerationEvent, QuizSettings } from "@/lib/generation/types";
+import type { ShareRecipient } from "@/lib/quiz-shared";
 import type { Question, Quiz } from "@/lib/types";
 
 const quizzes = () => collection(firestore(), "quizzes");
@@ -33,6 +34,19 @@ export async function listQuizzesForDocument(uid: string, docId: string): Promis
       where("ownerId", "==", uid),
       where("documentId", "==", docId),
       orderBy("createdAt", "desc"),
+    ),
+  );
+  return snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }) as Quiz);
+}
+
+/** Quizzes other people shared with this user (§ sharing). */
+export async function listSharedQuizzes(uid: string, max = 50): Promise<Quiz[]> {
+  const snapshot = await getDocs(
+    query(
+      quizzes(),
+      where("sharedWith", "array-contains", uid),
+      orderBy("createdAt", "desc"),
+      fsLimit(max),
     ),
   );
   return snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() }) as Quiz);
@@ -72,6 +86,54 @@ export async function deleteQuiz(user: User, quizId: string): Promise<void> {
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(payload?.error ?? "That quiz couldn't be deleted. Please try again.");
+  }
+}
+
+/* ------------------------------------------------------------------ sharing */
+
+/** Owner-only; the server resolves uids to addresses so the client needs no directory. */
+export async function getShareRecipients(user: User, quizId: string): Promise<ShareRecipient[]> {
+  const token = await user.getIdToken();
+  const response = await fetch(`/api/quizzes/${quizId}/share`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { recipients?: ShareRecipient[]; error?: string }
+    | null;
+  if (!response.ok) throw new Error(payload?.error ?? "Couldn't load who this is shared with.");
+  return payload?.recipients ?? [];
+}
+
+export async function shareQuiz(
+  user: User,
+  quizId: string,
+  email: string,
+): Promise<ShareRecipient> {
+  const token = await user.getIdToken();
+  const response = await fetch(`/api/quizzes/${quizId}/share`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  const payload = (await response.json().catch(() => null)) as
+    | { recipient?: ShareRecipient; error?: string }
+    | null;
+  if (!response.ok || !payload?.recipient) {
+    throw new Error(payload?.error ?? "Couldn't share that quiz.");
+  }
+  return payload.recipient;
+}
+
+export async function unshareQuiz(user: User, quizId: string, recipientUid: string): Promise<void> {
+  const token = await user.getIdToken();
+  const response = await fetch(`/api/quizzes/${quizId}/share`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ uid: recipientUid }),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(payload?.error ?? "Couldn't stop sharing.");
   }
 }
 

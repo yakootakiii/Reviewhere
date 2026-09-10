@@ -74,6 +74,13 @@ export interface Quiz {
   lastAttemptScore: number | null;
   /** §2.6 subject tags, free-form and client-writable. */
   tags?: string[];
+  /**
+   * Recipient uids. Server-written only, and uids rather than emails — every
+   * recipient can read this array, so addresses would leak them to each other.
+   */
+  sharedWith?: string[];
+  /** Stamped on first share so a recipient can see who sent it. */
+  ownerName?: string;
 }
 
 export interface Question {
