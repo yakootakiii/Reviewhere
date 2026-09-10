@@ -1,20 +1,13 @@
 "use client";
 
 import { AuthGuard } from "@/components/auth/auth-guard";
-import { Sidebar } from "@/components/shell/sidebar";
-import { BottomTabBar } from "@/components/shell/bottom-tab-bar";
+import { Dock } from "@/components/shell/dock";
 import { NetworkToast } from "@/components/shell/network-toast";
 import { TopBar } from "@/components/shell/top-bar";
-import { usePersistedValue } from "@/lib/persisted-state";
-
-const SIDEBAR_STORAGE_KEY = "reviewhere.sidebarCollapsed";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const [stored, setStored] = usePersistedValue<"true" | "false">(SIDEBAR_STORAGE_KEY, "false");
-  const collapsed = stored === "true";
-
   return (
-    <div className="flex min-h-dvh">
+    <div className="flex min-h-dvh flex-col">
       {/* §6: keyboard users shouldn't have to tab the whole nav on every page. */}
       <a
         href="#main"
@@ -23,15 +16,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         Skip to content
       </a>
       <NetworkToast />
-      <Sidebar collapsed={collapsed} onToggle={() => setStored(collapsed ? "false" : "true")} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
-        {/* Bottom padding clears the mobile tab bar. */}
-        <main id="main" className="page flex-1 pt-6 pb-28 sm:pt-10 lg:pb-20">
-          <AuthGuard>{children}</AuthGuard>
-        </main>
-      </div>
-      <BottomTabBar />
+      <TopBar />
+      {/* Bottom padding clears the floating dock at every size. */}
+      <main id="main" className="page flex-1 pt-6 pb-32 sm:pt-10">
+        <AuthGuard>{children}</AuthGuard>
+      </main>
+      <Dock />
     </div>
   );
 }

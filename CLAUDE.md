@@ -67,6 +67,7 @@ Staying on a serverless host would mean moving extraction into the browser. That
 ## Architecture
 
 - `src/app/(auth)/` holds signed-out routes; `src/app/(app)/` holds the shell layout plus every signed-in route.
+- **One navigation component, not two.** [dock.tsx](src/components/shell/dock.tsx) is a floating bottom dock used at every size; it replaced a desktop sidebar and a mobile tab bar that rendered the same three links from the same list. Its active pill slides via Motion's `layoutId`, so there is exactly one indicator element — don't reintroduce a per-item indicator, or the animation has nothing to move between.
 - Providers nest in the root layout as **Theme → Auth → Toast**, consumed via `useTheme()` / `useAuth()` / `useToast()`.
 - `AuthGuard` is a UX gate only. The security boundary is `firestore.rules` / `storage.rules` scoped to the owning `uid` — never move an authorization decision into the client guard.
 - Theme resolution is deliberately split: an inline script in `<head>` stamps `data-theme` before first paint (no flash), and `ThemeProvider` syncs React's resolved value back out to the DOM. Change one and you must change the other.

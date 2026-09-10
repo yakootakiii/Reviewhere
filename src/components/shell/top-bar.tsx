@@ -44,7 +44,10 @@ export function TopBar() {
       )}
     >
       <div className="flex min-w-0 justify-start">
-        <Link href="/dashboard" className="text-callout font-semibold tracking-[-0.01em] lg:hidden">
+        <Link
+          href="/dashboard"
+          className="rounded-sm text-title2 font-semibold tracking-[-0.02em] outline-offset-4"
+        >
           Reviewhere<span className="text-[var(--color-accent)]">.</span>
         </Link>
       </div>

@@ -178,7 +178,7 @@ Still worth having, purely for cost/abuse protection (not monetization):
 ## 6. Non-Functional Requirements
 
 - **Accessibility:** WCAG 2.1 AA — proper contrast ratios even with the light gradient palette, focus-visible states on every interactive element, full keyboard navigation, ARIA labels on icon-only buttons, reduced-motion mode that disables spring animations.
-- **Responsiveness:** Fluid layouts for desktop, tablet, and mobile; sidebar collapses to a bottom tab bar or drawer on mobile.
+- **Responsiveness:** Fluid layouts for desktop, tablet, and mobile. One navigation at every size — a floating dock fixed to the bottom — rather than a sidebar that turns into a tab bar.
 - **Performance:** Skeleton/loading states for anything >300ms; optimistic UI for non-destructive actions (rename, tag).
 - **Privacy/Security:** Uploaded documents are private to the owning user by default; page-count and file-size limits enforced server-side; signed, time-limited URLs for any document preview.
 - **Reliability:** Generation jobs are resumable/retryable; if the LLM step fails, the document stays in library with a "regenerate" action rather than being lost.
@@ -239,7 +239,7 @@ Still worth having, purely for cost/abuse protection (not monetization):
 
 ### 7.4 Component Inventory
 - **Navigation bar** — search centred, profile avatar menu hard right, wordmark at the left on mobile only; translucent/blurred on scroll.
-- **Sidebar** (desktop) — Dashboard, Library, Create New; collapsible. Settings is reached from the account menu instead (Profile and Preferences both open it), so the nav doesn't duplicate a destination you find under your own avatar.
+- **Dock** — the only navigation, at every screen size: a floating, blurred pill fixed to the bottom holding Dashboard, Library and Create. The active item is marked by a single pill that *slides* between items (Motion `layoutId`, a tween rather than a spring — this fires on every navigation and the design language doesn't bounce). Below 360px the labels become `sr-only` so three items still fit without clipping, which also makes it read as a literal dock of icons. Settings is reached from the account menu instead (Profile and Preferences both open it), so the nav doesn't duplicate a destination you find under your own avatar.
 - **Buttons** — Primary (gradient or solid accent fill), Secondary (outline/tinted), Destructive (red), Icon-only (circular, tinted background).
 - **Cards** — one `LibraryCard` serves documents and quizzes in two shapes: a **square widget tile** in grid view (a label at the top, the single number that matters, then identity at the foot — the proportions carry it, so no border or shadow is needed) and a plain row in list view, where the dividers belong to the list rather than to each item.
 - **Inputs** — Text field, textarea, file dropzone, all 12px radius with floating/inline labels and clear error text.
@@ -265,9 +265,9 @@ Still worth having, purely for cost/abuse protection (not monetization):
 | Caption | 13px | Regular | Metadata, timestamps |
 
 ### 7.6 Responsive Behavior
-- **Desktop (≥1024px):** Sidebar + content, multi-column library grid (3–4 cols).
+- **Desktop (≥1024px):** Full-width content under a top bar (wordmark left, search centred, avatar right), dock floating at the bottom; library grid at 4 columns.
 - **Tablet (768–1023px):** Collapsible sidebar (icon-only or drawer), 2-column grid.
-- **Mobile (<768px):** Bottom tab bar, single-column stacked cards, quiz-taking is full-screen single-question view.
+- **Mobile (<768px):** The same dock, two-column widget tiles, and quiz-taking as a full-screen single-question view. The top bar's search gives way to the library's own, so the wordmark and avatar keep the bar uncluttered.
 
 ### 7.7 Specific Empty/Error/Limit States to Design
 - Empty library ("No reviewers yet").
