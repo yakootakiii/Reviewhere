@@ -113,7 +113,7 @@ type,question,choice_a,choice_b,choice_c,choice_d,correct_answer,accepted_answer
   - PDF text extraction (e.g., `pdf-parse`, `pdfplumber`) and OCR fallback (Tesseract) for scanned pages.
   - PPTX parsing (e.g., `python-pptx` or `pptx2json`) for slide text/notes.
   - LLM calls via **OpenRouter free-tier models** for automatic question generation (Mode A); CSV import/parsing for the manual fallback (Mode B).
-- **Hosting:** Firebase Hosting or Vercel.
+- **Hosting:** a host that runs a persistent Node process — Render, Railway, Fly, or Firebase App Hosting. *Not* a serverless platform: Vercel and similar cap request bodies (4.5 MB) far below this app's 25 MB upload limit, so a large document never reaches the ingest route. See `render.yaml` and the README.
 - **Security:** Firestore Security Rules scoped per-user; Storage Rules restricting access to the owning `uid`; Cloud Functions validate file size/page count server-side (never trust the client-reported page count).
 
 ### 3.1 OpenRouter Free Tier — Notes & Tradeoffs

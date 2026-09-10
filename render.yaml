@@ -1,0 +1,47 @@
+# Render blueprint. Import this repo as a Blueprint (or point a Web Service at
+# it) and Render reads the build and start commands from here rather than from
+# dashboard fields nobody can review in a diff.
+#
+# Why Render and not Vercel: Vercel's serverless functions cap request bodies at
+# 4.5 MB, and this app accepts documents up to 25 MB (see MAX_FILE_BYTES). A
+# Render Web Service is an ordinary long-lived Node process, so a large upload
+# reaches POST /api/documents intact.
+services:
+  - type: web
+    name: reviewhere
+    runtime: node
+    # Free spins down after 15 minutes idle and takes about a minute to wake,
+    # and its memory is tight for parsing a 20 MB PDF. Left on free so nothing
+    # is billed without a decision — see README "Choosing an instance".
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    # `next start` binds to $PORT, which is Render's one hard requirement.
+    healthCheckPath: /
+    autoDeployTrigger: commit
+    envVars:
+      # sync: false means "set this in the dashboard" — secrets never live in
+      # the repo. Render exposes these during the build too, which matters:
+      # every NEXT_PUBLIC_ value is inlined into the bundle at build time, so
+      # changing one requires a redeploy, not just a restart.
+      - key: NEXT_PUBLIC_FIREBASE_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_PROJECT_ID
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+        sync: false
+      - key: NEXT_PUBLIC_FIREBASE_APP_ID
+        sync: false
+      - key: NEXT_PUBLIC_ENABLE_APPLE_SIGNIN
+        value: "false"
+      # Server-only. Never prefix these with NEXT_PUBLIC_.
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      # OPENROUTER_MODEL is optional — set it in the dashboard only to override
+      # the head of the free-model chain when availability shifts.

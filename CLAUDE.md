@@ -60,7 +60,9 @@ Firebase Storage now requires the Blaze plan, so this project **does not use it*
 
 Consequences to keep in mind: there is no document preview and no re-extraction from an original, so regeneration (§2.6) reads the stored page text. `storage.rules` is kept for a future change of heart but is not in `firebase.json` and is not deployed. Don't add Storage calls without revisiting the billing decision.
 
-**Deployment constraint:** Vercel caps serverless request bodies at 4.5 MB, below this app's 25 MB file limit. Deploying there needs either a host without that cap or a move to client-side extraction — which would forfeit the server-side page-count guarantee below.
+**Deployment:** the app needs a host that runs a **persistent Node process**, not serverless functions — uploads go up to 25 MB and serverless platforms cap request bodies well below that (Vercel's is 4.5 MB). [render.yaml](render.yaml) defines a Render Web Service, and the README covers the environment variables and the Firebase authorised-domain step. Two non-obvious properties: `NEXT_PUBLIC_*` values are inlined at **build** time, so changing one needs a rebuild; and parsing a 20 MB PDF holds it in RAM, so a small instance fails as an OOM kill rather than a clean error.
+
+Staying on a serverless host would mean moving extraction into the browser. That is viable — `src/lib/extraction/` imports only `unpdf`, `jszip` and `fast-xml-parser` and uses no Node built-ins — and it costs less than it first appears: the server would still count the pages it receives, so the 150-page cap stays server-enforced. What is lost is narrower, the assurance that the text corresponds to a real document of that length.
 
 ## Architecture
 
