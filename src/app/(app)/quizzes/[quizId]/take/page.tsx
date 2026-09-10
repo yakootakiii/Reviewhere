@@ -41,7 +41,9 @@ export default function TakeQuizPage({ params }: { params: Promise<{ quizId: str
     Promise.all([getQuiz(quizId), getQuestions(quizId)])
       .then(([quiz, questions]) => {
         if (!active) return;
-        if (!quiz || quiz.ownerId !== user.uid) setState({ name: "error" });
+        // As on the overview: the rules already decided this read was allowed,
+        // so a returned quiz is one this user may take, owned or shared.
+        if (!quiz) setState({ name: "error" });
         else setState({ name: "ready", quiz, questions });
       })
       .catch(() => {

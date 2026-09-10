@@ -55,7 +55,12 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
 
     Promise.all([getQuiz(quizId), getQuestions(quizId), listAttempts(user.uid, quizId)])
       .then(async ([quiz, questions, attempts]) => {
-        if (!quiz || quiz.ownerId !== user.uid) {
+        // No ownership check here on purpose. firestore.rules decides who may
+        // read a quiz — owner or named recipient — so a quiz that came back is
+        // one this user is allowed to have. Re-deciding it client-side is how
+        // shared quizzes were unopenable: this branch rejected every recipient
+        // before the sharing rules ever applied.
+        if (!quiz) {
           if (active) setState({ name: "error" });
           return;
         }
