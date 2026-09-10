@@ -27,12 +27,12 @@ export function Dock() {
       className={cn(
         "fixed inset-x-0 z-40 flex justify-center px-3",
         // Sits above the home indicator on iOS, and clear of the edge elsewhere.
-        "bottom-[max(0.75rem,env(safe-area-inset-bottom))]",
+        "bottom-[max(0.75rem,env(safe-area-inset-bottom))] sm:bottom-[max(1.25rem,env(safe-area-inset-bottom))]",
       )}
     >
       <ul
         className={cn(
-          "surface-blur flex max-w-full items-center gap-0.5 rounded-full p-1.5 sm:gap-1",
+          "surface-blur flex max-w-full items-center gap-0.5 rounded-full p-1.5 sm:gap-1 sm:p-2",
           "border border-[var(--color-border)] shadow-[var(--shadow-overlay)]",
         )}
       >
@@ -44,9 +44,11 @@ export function Dock() {
                 href={href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  // Tighter on the narrowest phones so three labelled items
-                  // still fit a 320px screen without the dock clipping.
-                  "relative flex items-center gap-1.5 rounded-full px-3 py-2 transition-colors duration-150 sm:gap-2 sm:px-4",
+                  // Scales up from sm: on a phone the dock is already in
+                  // proportion to a compact layout, and growing it there would
+                  // push three labelled items past the narrowest screens.
+                  "relative flex items-center rounded-full px-3 py-2 transition-colors duration-150",
+                  "sm:px-5 sm:py-2.5",
                   "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]",
                   active ? "text-primary" : "text-secondary hover:text-primary",
                 )}
@@ -64,17 +66,22 @@ export function Dock() {
                   />
                 )}
                 {/* Above the sliding pill, which is painted behind the content. */}
-                <span className="relative flex items-center gap-2">
+                <span className="relative flex items-center gap-2 sm:gap-2.5">
                   <Icon
                     aria-hidden
                     strokeWidth={active ? 2 : 1.75}
-                    className={cn("size-[18px] shrink-0", active && "text-[var(--color-accent)]")}
+                    className={cn(
+                      "size-[18px] shrink-0 sm:size-5",
+                      active && "text-[var(--color-accent)]",
+                    )}
                   />
                   {/* Below 360px three labelled items would overflow the dock,
                       so the narrowest phones get a genuinely dock-like row of
                       icons. sr-only rather than hidden, so the link keeps its
                       accessible name either way. */}
-                  <span className="text-caption font-medium max-[359px]:sr-only">{label}</span>
+                  <span className="text-caption font-medium max-[359px]:sr-only sm:text-callout">
+                    {label}
+                  </span>
                 </span>
               </Link>
             </li>
