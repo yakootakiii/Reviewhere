@@ -23,6 +23,7 @@ instead of crashing, so the shell stays browsable before a project exists.
 ```bash
 npm test           # vitest, single run
 npm run test:rules # security rules against the Firestore emulator (needs Java)
+npm run check:contrast # holds every theme's colour pairs to WCAG AA
 npm run lint
 npm run build      # also runs the TypeScript check
 ```

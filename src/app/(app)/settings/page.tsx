@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Monitor, Moon, Sun } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { ThemePicker } from "@/components/settings/theme-picker";
 import { Sheet } from "@/components/ui/sheet";
 import { Toggle } from "@/components/ui/toggle";
 import { useToast } from "@/components/ui/toast";
@@ -19,14 +20,9 @@ import {
   signOut,
 } from "@/lib/firebase/auth";
 import { updateDisplayName, updatePreferences } from "@/lib/firebase/users";
-import { DEFAULT_PREFERENCES, type FeedbackMode, type ThemePreference } from "@/lib/types";
+import type { ThemePreference } from "@/lib/themes";
+import { DEFAULT_PREFERENCES, type FeedbackMode } from "@/lib/types";
 import { initialsFrom } from "@/lib/utils";
-
-const THEME_OPTIONS = [
-  { value: "light" as const, label: "Light", icon: <Sun aria-hidden className="size-3.5" /> },
-  { value: "dark" as const, label: "Dark", icon: <Moon aria-hidden className="size-3.5" /> },
-  { value: "system" as const, label: "System", icon: <Monitor aria-hidden className="size-3.5" /> },
-];
 
 const FEEDBACK_OPTIONS = [
   { value: "immediate" as const, label: "After each question" },
@@ -35,7 +31,7 @@ const FEEDBACK_OPTIONS = [
 
 export default function SettingsPage() {
   const { user, profile, refreshProfile } = useAuth();
-  const { preference, setPreference } = useTheme();
+  const { preference, resolved, setPreference } = useTheme();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -109,41 +105,58 @@ export default function SettingsPage() {
   }
 
   return (
-    // Settings is a list of settings, not three boxes: each group is a heading
-    // and a rule, which is what a card here was standing in for anyway.
     <div className="mx-auto flex max-w-2xl flex-col">
       <header className="flex flex-col gap-1.5">
         <h1 className="text-display">Settings</h1>
         <p className="text-callout text-secondary">Your account and study preferences.</p>
       </header>
 
-      <section className="mt-12 flex flex-col gap-6">
-        <div className="flex items-center gap-4">
-          <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-secondary text-body font-semibold text-secondary">
+      <Section title="Account">
+        <div className="flex items-center gap-4 pb-1">
+          <div className="flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-secondary text-callout font-semibold text-secondary">
             {user.photoURL ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.photoURL} alt="" className="size-full object-cover" referrerPolicy="no-referrer" />
+              <img
+                src={user.photoURL}
+                alt=""
+                className="size-full object-cover"
+                referrerPolicy="no-referrer"
+              />
             ) : (
               initialsFrom(name, user.email)
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="truncate text-title2">{name || "Your account"}</p>
-            <p className="truncate text-callout text-secondary">{user.email}</p>
+            <p className="truncate text-callout font-medium">{name || "Your account"}</p>
+            <p className="truncate text-caption text-tertiary">{user.email}</p>
           </div>
         </div>
 
-        <div className="flex items-end gap-2">
-          <Input
-            label="Display name"
-            value={name}
-            onChange={(event) => setDraft(event.target.value)}
-            className="flex-1"
-          />
-          <Button variant="secondary" onClick={onSaveName} loading={savingName} disabled={!nameChanged}>
-            Save
-          </Button>
-        </div>
+        <Row label="Display name" description="How your name appears on this device.">
+          <div className="flex w-full items-center gap-2 sm:w-56">
+            <Input
+              label="Display name"
+              hideLabel
+              value={name}
+              onChange={(event) => setDraft(event.target.value)}
+              className="flex-1"
+            />
+            <Button
+              variant="secondary"
+              onClick={onSaveName}
+              loading={savingName}
+              disabled={!nameChanged}
+            >
+              Save
+            </Button>
+          </div>
+        </Row>
+
+        <Row label="Sign-in method" description="Managed by your provider.">
+          <span className="text-callout text-secondary">
+            {user.providerData.map((provider) => providerLabel(provider.providerId)).join(", ")}
+          </span>
+        </Row>
 
         {!user.emailVerified && user.providerData.some((p) => p.providerId === "password") && (
           <div className="flex flex-wrap items-center justify-between gap-3 border-l-2 border-[var(--color-warning)] py-1 pl-4">
@@ -164,55 +177,33 @@ export default function SettingsPage() {
             </Button>
           </div>
         )}
+      </Section>
 
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-caption text-tertiary">Signed in with</span>
-          <span className="text-caption text-secondary">
-            {user.providerData.map((provider) => providerLabel(provider.providerId)).join(", ")}
-          </span>
-        </div>
-      </section>
+      <Section title="Appearance" id="preferences">
+        <Row label="Theme" description="Applies on this device.">
+          <ThemePicker preference={preference} active={resolved} onChange={onThemeChange} />
+        </Row>
+      </Section>
 
-      <section id="preferences" className="mt-14 flex flex-col gap-5">
-        <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">Preferences</h2>
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-callout text-primary">Appearance</span>
-            <span className="text-caption text-secondary">System follows your device setting.</span>
-          </div>
-          <SegmentedControl
-            label="Appearance"
-            options={THEME_OPTIONS}
-            value={preference}
-            onChange={onThemeChange}
-          />
-        </div>
-
-        <div className="h-px bg-[var(--color-border)]" />
-
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-col">
-            <span className="text-callout text-primary">Show answers</span>
-            <span className="text-caption text-secondary">When feedback appears during a quiz.</span>
-          </div>
+      <Section title="Quizzes">
+        <Row label="Show answers" description="When feedback appears during a quiz.">
           <SegmentedControl
             label="Show answers"
             options={FEEDBACK_OPTIONS}
             value={preferences.feedbackMode}
             onChange={(value: FeedbackMode) => onPreferenceChange({ feedbackMode: value })}
           />
-        </div>
+        </Row>
 
-        <div className="h-px bg-[var(--color-border)]" />
-
-        <Toggle
-          label="Show a timer"
-          description="Track how long each quiz takes."
-          checked={preferences.timerEnabled}
-          onCheckedChange={(checked) => onPreferenceChange({ timerEnabled: checked })}
-        />
-      </section>
+        <Row label="Show a timer" description="Track how long each quiz takes.">
+          <Toggle
+            label="Show a timer"
+            hideLabel
+            checked={preferences.timerEnabled}
+            onCheckedChange={(checked) => onPreferenceChange({ timerEnabled: checked })}
+          />
+        </Row>
+      </Section>
 
       <section className="mt-14 flex flex-col items-start gap-2 border-t border-[var(--color-border)] pt-8">
         <h2 className="text-title2">Delete account</h2>
@@ -220,7 +211,11 @@ export default function SettingsPage() {
           Permanently removes your account, documents, and every quiz you&apos;ve generated. This
           can&apos;t be undone.
         </p>
-        <Button variant="secondary" className="mt-3 text-[var(--color-error)]" onClick={() => setConfirmOpen(true)}>
+        <Button
+          variant="secondary"
+          className="mt-3 text-[var(--color-error)]"
+          onClick={() => setConfirmOpen(true)}
+        >
           Delete account
         </Button>
       </section>
@@ -265,6 +260,51 @@ export default function SettingsPage() {
           autoComplete="off"
         />
       </Sheet>
+    </div>
+  );
+}
+
+/** A titled group. The rule and the label do what a card used to. */
+function Section({
+  title,
+  id,
+  children,
+}: {
+  title: string;
+  id?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section id={id} className="mt-12 flex flex-col">
+      <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">{title}</h2>
+      <div className="mt-4 flex flex-col divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+/**
+ * One setting: what it is on the left, the control on the right. Every row in
+ * the page shares this shape, which is most of what "polished" means here —
+ * the controls line up because they are laid out by the same component.
+ */
+function Row({
+  label,
+  description,
+  children,
+}: {
+  label: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="text-callout">{label}</span>
+        {description && <span className="text-caption text-tertiary">{description}</span>}
+      </div>
+      <div className="flex shrink-0 items-center sm:justify-end">{children}</div>
     </div>
   );
 }

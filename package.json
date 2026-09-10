@@ -12,7 +12,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.mts\""
+    "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.mts\"",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",

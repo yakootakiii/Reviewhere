@@ -6,7 +6,7 @@ import {
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, addDoc } from "firebase/firestore";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
 /**
  * The security boundary, exercised against the real rules engine.

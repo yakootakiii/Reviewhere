@@ -9,12 +9,20 @@
  * is reserved for genuinely floating layers (sheets, menus, toasts) — a card
  * that sits in the page does not cast one.
  *
- * Theme resolution: an inline script in the root layout stamps
- * data-theme="light" | "dark" on <html> before first paint, so every token
- * below resolves without a flash. Never define a color only inside the dark
- * block — light is the base, dark overrides.
+ * Theme resolution: an inline script in the root layout stamps two attributes
+ * on <html> before first paint, so every token below resolves without a flash.
+ * `data-theme` picks which block applies (light, dark, paper, pastel,
+ * midnight, slate); `data-appearance` says whether that theme is light or dark
+ * and is what `color-scheme` and the `dark:` variant key off — "pastel" is
+ * light and "midnight" is dark, neither named for its appearance.
+ *
+ * :root is the light theme and the base. Every other block must redefine the
+ * whole token set rather than patching a few values, so a token can never
+ * resolve to a colour from a different theme. src/lib/themes.ts is the
+ * registry these blocks are paired with, and scripts/check-contrast.mjs reads
+ * them back to hold every theme to AA.
  */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant dark (&:where([data-appearance="dark"], [data-appearance="dark"] *));
 
 :root {
   /* Surfaces. The page is white; a "card" is white too, told apart by a
@@ -53,6 +61,16 @@
   --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.16), 0 2px 6px rgb(0 0 0 / 0.06);
 }
 
+/* ---------------------------------------------------------------- themes
+ * Each theme redefines the same token set, so nothing downstream knows which
+ * one is active. `data-appearance` says whether a theme is light or dark,
+ * which is what the `dark:` variant and `color-scheme` key off — "pastel" is
+ * light and "midnight" is dark, and neither is named for its appearance.
+ *
+ * Every theme's text, accent and semantic colours are checked against its own
+ * surfaces for WCAG AA; see `npm run check:contrast`.
+ * ------------------------------------------------------------------------ */
+
 [data-theme="dark"] {
   /* Not pure black: a near-black page lets a hairline read without glowing. */
   --color-bg: #0b0b0c;
@@ -64,8 +82,6 @@
   --color-text-secondary: #a1a1a6;
   --color-text-tertiary: #828288;
 
-  /* Brighter accents read correctly on near-black; contrast checked for AA.
-     7.5:1 with the near-black foreground below — white would be 2.6:1. */
   --color-accent: #4da3ff;
   --color-accent-hover: #7cbcff;
   --color-accent-foreground: #0b0b0c;
@@ -80,6 +96,118 @@
 
   --color-border: rgb(255 255 255 / 0.11);
   --color-border-strong: rgb(255 255 255 / 0.24);
+  --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
+}
+
+/* Warm off-white, for reading long explanations without the glare of pure white. */
+[data-theme="paper"] {
+  --color-bg: #faf6ef;
+  --color-surface: #fffdf8;
+  --color-surface-secondary: #f2ece1;
+  --color-surface-hover: #e8e0d2;
+
+  --color-text-primary: #2e2822;
+  --color-text-secondary: #5c5147;
+  --color-text-tertiary: #6f6255;
+
+  --color-accent: #9a5324;
+  --color-accent-hover: #7f431c;
+  --color-accent-foreground: #fffdf8;
+  --color-accent-soft: rgb(154 83 36 / 0.09);
+
+  --color-success: #1f6f3d;
+  --color-warning: #8a5a10;
+  --color-error: #b3232c;
+  --color-success-soft: rgb(31 111 61 / 0.1);
+  --color-warning-soft: rgb(138 90 16 / 0.1);
+  --color-error-soft: rgb(179 35 44 / 0.08);
+
+  --color-border: rgb(46 40 34 / 0.13);
+  --color-border-strong: rgb(46 40 34 / 0.26);
+  --shadow-overlay: 0 12px 32px -8px rgb(70 55 35 / 0.18), 0 2px 6px rgb(70 55 35 / 0.07);
+}
+
+/* Soft and cool, but still a working interface rather than a colour study. */
+[data-theme="pastel"] {
+  --color-bg: #f8f7fc;
+  --color-surface: #ffffff;
+  --color-surface-secondary: #eeecf8;
+  --color-surface-hover: #e4e1f3;
+
+  --color-text-primary: #2b2740;
+  --color-text-secondary: #565073;
+  --color-text-tertiary: #6b6486;
+
+  --color-accent: #5a4ac4;
+  --color-accent-hover: #4a3cab;
+  --color-accent-foreground: #ffffff;
+  --color-accent-soft: rgb(90 74 196 / 0.1);
+
+  --color-success: #1d7a52;
+  --color-warning: #8a5510;
+  --color-error: #b52a4a;
+  --color-success-soft: rgb(29 122 82 / 0.1);
+  --color-warning-soft: rgb(138 85 16 / 0.1);
+  --color-error-soft: rgb(181 42 74 / 0.08);
+
+  --color-border: rgb(43 39 64 / 0.13);
+  --color-border-strong: rgb(43 39 64 / 0.26);
+  --shadow-overlay: 0 12px 32px -8px rgb(43 39 64 / 0.18), 0 2px 6px rgb(43 39 64 / 0.07);
+}
+
+/* Deep blue rather than grey — easier at night than a neutral dark. */
+[data-theme="midnight"] {
+  --color-bg: #0b1020;
+  --color-surface: #0b1020;
+  --color-surface-secondary: #161d33;
+  --color-surface-hover: #202942;
+
+  --color-text-primary: #eef1fb;
+  --color-text-secondary: #a5adc9;
+  --color-text-tertiary: #8790ad;
+
+  --color-accent: #7fb0ff;
+  --color-accent-hover: #a3c7ff;
+  --color-accent-foreground: #0b1020;
+  --color-accent-soft: rgb(127 176 255 / 0.15);
+
+  --color-success: #4fc98a;
+  --color-warning: #e2a33f;
+  --color-error: #ff7b8a;
+  --color-success-soft: rgb(79 201 138 / 0.14);
+  --color-warning-soft: rgb(226 163 63 / 0.14);
+  --color-error-soft: rgb(255 123 138 / 0.13);
+
+  --color-border: rgb(190 205 255 / 0.13);
+  --color-border-strong: rgb(190 205 255 / 0.26);
+  --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.65), 0 2px 6px rgb(0 0 0 / 0.45);
+}
+
+/* Cool neutral grey — the quietest of the dark themes. */
+[data-theme="slate"] {
+  --color-bg: #14171a;
+  --color-surface: #14171a;
+  --color-surface-secondary: #212529;
+  --color-surface-hover: #2c3238;
+
+  --color-text-primary: #eceff2;
+  --color-text-secondary: #a7b0b8;
+  --color-text-tertiary: #8b949d;
+
+  --color-accent: #6fd3c7;
+  --color-accent-hover: #93e2d8;
+  --color-accent-foreground: #14171a;
+  --color-accent-soft: rgb(111 211 199 / 0.14);
+
+  --color-success: #5ec98a;
+  --color-warning: #dda23f;
+  --color-error: #f4808c;
+  --color-success-soft: rgb(94 201 138 / 0.14);
+  --color-warning-soft: rgb(221 162 63 / 0.14);
+  --color-error-soft: rgb(244 128 140 / 0.13);
+
+  --color-border: rgb(226 234 240 / 0.12);
+  --color-border-strong: rgb(226 234 240 / 0.25);
   --shadow-overlay: 0 12px 32px -8px rgb(0 0 0 / 0.6), 0 2px 6px rgb(0 0 0 / 0.4);
 }
 

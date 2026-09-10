@@ -5,13 +5,19 @@ import { cn } from "@/lib/utils";
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
+  /**
+   * Hides the label visually when something else already names the field —
+   * a settings row, say. It stays in the accessibility tree either way, so
+   * the input is never left unnamed.
+   */
+  hideLabel?: boolean;
   /** Plain-language message rendered inline and wired up via aria-describedby. */
   error?: string;
   hint?: string;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
-  { className, label, error, hint, id, ...props },
+  { className, label, hideLabel, error, hint, id, ...props },
   ref,
 ) {
   const generatedId = useId();
@@ -24,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-caption text-secondary">
+      <label htmlFor={inputId} className={cn("text-caption text-secondary", hideLabel && "sr-only")}>
         {label}
       </label>
       <input

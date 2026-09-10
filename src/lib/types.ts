@@ -4,7 +4,9 @@
  */
 import type { Timestamp } from "firebase/firestore";
 
-export type ThemePreference = "light" | "dark" | "system";
+import type { ThemePreference } from "@/lib/themes";
+
+export type { ThemePreference };
 export type Difficulty = "easy" | "medium" | "hard" | "mixed";
 export type QuestionType = "mcq" | "identification";
 export type GenerationMode = "auto" | "manualCsv";

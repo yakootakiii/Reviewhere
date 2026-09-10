@@ -17,6 +17,7 @@ npx tsc --noEmit # typecheck alone
 npm test         # vitest, single run
 npm run test:watch
 npx vitest run src/lib/extraction   # one directory
+npm run check:contrast              # every theme's colour pairs against WCAG AA
 ```
 
 Tests use **real file fixtures, not mocks** — [src/lib/extraction/fixtures.ts](src/lib/extraction/fixtures.ts) builds valid PDF bytes and pptx zips in memory, so the parsers are exercised against actual formats. Keep that approach for the Mode B CSV parser.
@@ -112,13 +113,20 @@ This is the central architectural constraint. Question generation has two indepe
 
 ## Design system
 
-The UI is Apple-inspired and §7 of the spec is prescriptive — read the note at the top of §7 before writing any component, since it supersedes the subsections beneath it. Tokens live in [src/app/globals.css](src/app/globals.css) as a Tailwind 4 `@theme`; use the semantic utilities (`bg-surface`, `text-secondary`, `rounded-lg`, `text-title2`) rather than raw hex or arbitrary sizes, so light and dark stay in sync.
+The UI is Apple-inspired and §7 of the spec is prescriptive — read the note at the top of §7 before writing any component, since it supersedes the subsections beneath it. Tokens live in [src/app/globals.css](src/app/globals.css) as a Tailwind 4 `@theme`; use the semantic utilities (`bg-surface`, `text-secondary`, `rounded-lg`, `text-title2`) rather than raw hex or arbitrary sizes, so every theme stays in sync.
 
-**The system is deliberately quiet.** White page, surfaces told apart by hairlines, one flat accent for the thing you should click, hierarchy from type and space. Things that are *not* used, because together they made the build read as a generic template: gradients of any kind, shadows on in-page surfaces (shadow is for sheets, menus and toasts only), radii above 14px, tinted icon tiles, decorative pills, and hover transforms. Reach for a card only when it groups something — a list of rows wants dividers, and a page section wants a rule.
+**The system is deliberately quiet.** White page, surfaces told apart by hairlines, one flat accent for the thing you should click, hierarchy from type and space. Things that are *not* used, because together they made the build read as a generic template: gradients of any kind, shadows on in-page surfaces (shadow is for sheets, menus and toasts only), radii above 18px (and 18px only for the library's widget tile), tinted icon tiles, decorative pills, and hover transforms. Reach for a card only when it groups something — a list of rows wants dividers, and a page section wants a rule.
 
-Two implementation notes that are easy to get wrong:
+**Six themes, one token set.** `:root` is the light theme and the base; `[data-theme="dark"|"paper"|"pastel"|"midnight"|"slate"]` each redefine the *whole* set. Never define a colour only inside one block — a partially-defined theme resolves the rest from the base, which is how you get an unreadable pair nobody wrote. [src/lib/themes.ts](src/lib/themes.ts) is the registry (label, description, appearance, swatch); adding a theme means a CSS block, a registry entry, and — if it is dark — its id in the pre-paint script's inlined list, which `themes.test.ts` pins to the registry.
+
+`data-appearance` (`light`/`dark`), not the theme's name, drives `color-scheme` and the Tailwind `dark:` variant, so `dark:` still means "on a dark page" under Midnight and Slate, and Pastel is a light theme despite not being white.
+
+**`npm run check:contrast` is the guard rail, not your eye.** It reads the token blocks back out of `globals.css` and holds all six themes to AA on the foreground/background pairs the UI actually puts together. Run it after touching any colour; a theme that fails it doesn't ship.
+
+Three implementation notes that are easy to get wrong:
 
 - **`--color-accent-foreground` is what sits on the accent fill** — white in light mode, near-black in dark. White on the dark-mode accent is 2.6:1 and fails AA; the paired token is 7.5:1. Never hardcode `text-white` on an accent surface.
+- **The theme picker's swatch paints its own background.** Three stripes in an opaque bordered square, because unbordered dots vanish against a page of the same colour — a dark theme's swatch was invisible on a dark page.
 - **`cn()` extends tailwind-merge with this app's type scale** ([src/lib/utils.ts](src/lib/utils.ts)). Without that, `text-caption` and `text-secondary` collide in one class group and the later silently deletes the earlier — which really happened, and rendered the primary button's label in body colour. If you add a size to `--text-*`, add it to that list too.
 
 Accessibility is a hard requirement, not polish: WCAG 2.1 AA contrast, visible focus rings (2px accent, 2px offset — never removed), full keyboard navigation including quiz shortcuts (1–4 for MCQ, Enter to submit), and a reduced-motion mode that disables spring animations. The global `prefers-reduced-motion` block in `globals.css` handles CSS transitions; Motion components additionally check `useReducedMotion()`.

@@ -195,7 +195,7 @@ Still worth having, purely for cost/abuse protection (not monetization):
 >
 > The system is now: **a white page, surfaces separated by hairlines rather than
 > shadows, one flat accent reserved for the thing you should click, and hierarchy
-> carried by type and space.** No gradients anywhere. Radii are 6–14px. Shadow is
+> carried by type and space.** No gradients anywhere. Radii are 6–18px. Shadow is
 > reserved for genuinely floating layers — sheets, menus, toasts. Cards are used
 > only where they group something; lists use dividers, and sections use rules.
 > Where the subsections below conflict with this, this note wins.
@@ -203,8 +203,7 @@ Still worth having, purely for cost/abuse protection (not monetization):
 ### 7.1 Design Language
 - Minimalist, elegant, content-first — the UI recedes, the reviewer content leads.
 - SF Pro–inspired typography (use **Inter** or **SF Pro Display/Text** if licensed; Inter is the closest open-source match).
-- Light theme: white/near-white surfaces (`#FFFFFF`, `#F5F5F7`) with dark mode (`#000000`/`#1C1C1E` surfaces).
-- Subtle gradients (e.g., a soft blue-to-violet accent on primary CTAs and progress rings), used sparingly.
+- Six named themes rather than a light/dark pair — see §7.2. Light is the base; every other theme redefines the same tokens.
 - Consistent corner radius: **12px** for inputs/small components, **16–20px** for cards/modals.
 - Soft shadows (`0 4px 20px rgba(0,0,0,0.06)`) and 1px hairline borders instead of heavy drop shadows.
 - Large, confident headings (SF Pro Display-style, tight tracking); clear type scale (e.g., 34/28/22/17/15/13px).
@@ -212,22 +211,48 @@ Still worth having, purely for cost/abuse protection (not monetization):
 - Simple line-based icons (SF Symbols–style weight; Lucide icons are a good open-source match).
 - No unnecessary card nesting, no gratuitous drop shadows, no clutter.
 
-### 7.2 Color Tokens (example)
-```
---color-bg: #F5F5F7        (dark: #000000)
---color-surface: #FFFFFF   (dark: #1C1C1E)
---color-surface-secondary: #F2F2F7 (dark: #2C2C2E)
---color-text-primary: #1D1D1F (dark: #F5F5F7)
---color-text-secondary: #6E6E73 (dark: #98989D)
---color-accent: #0A84FF        (system blue)
---color-accent-gradient: linear-gradient(135deg, #0A84FF, #7C5CFF)
---color-success: #34C759
---color-warning: #FF9F0A
---color-error: #FF3B30
---radius-sm: 12px
---radius-lg: 20px
---shadow-soft: 0 4px 20px rgba(0,0,0,0.06)
-```
+### 7.2 Color Tokens and Themes
+
+The palette is a **token contract, not a colour list**. Every component reads
+semantic tokens (`--color-bg`, `--color-surface`, `--color-surface-secondary`,
+`--color-surface-hover`, `--color-text-primary` / `-secondary` / `-tertiary`,
+`--color-accent` + `-hover` / `-foreground` / `-soft`, `--color-success` /
+`-warning` / `-error` and their `-soft` tints, `--color-border`,
+`--color-border-strong`, `--shadow-overlay`) and never a raw hex, so a theme is
+one block redefining that set.
+
+Two attributes carry it, both stamped on `<html>` before first paint:
+
+- **`data-theme`** — which token block applies.
+- **`data-appearance`** — `light` or `dark`, driving `color-scheme` and the
+  Tailwind `dark:` variant. A theme is not named for its appearance: *Pastel*
+  is light and *Midnight* is dark.
+
+| Theme | Appearance | What it is |
+|---|---|---|
+| Light | light | The base. White page, hairline surfaces, `#0066cc` accent |
+| Dark | dark | Near-black page, `#4da3ff` accent on a near-black foreground |
+| Paper | light | Warm off-white (`#faf6ef`), ink-brown text, rust accent — for long reading sessions |
+| Pastel | light | Lavender-tinted surfaces, muted violet accent |
+| Midnight | dark | Deep navy (`#0b1020`), cool blue accent |
+| Slate | dark | Neutral near-black (`#14171a`), muted teal accent |
+
+[src/lib/themes.ts](src/lib/themes.ts) is the registry: id, label, description,
+appearance and the three-colour swatch the picker draws. Three things must move
+together when a theme is added — the CSS block, the registry entry, and the
+pre-paint script's inlined list of dark ids (it runs before any module loads, so
+it cannot import the registry). `themes.test.ts` pins the third to the first two
+rather than trusting a comment.
+
+**Contrast is enforced, not eyeballed.** `npm run check:contrast` parses the
+token blocks out of `globals.css` and holds every theme's foreground/background
+pairs to WCAG AA (4.5:1). A theme that fails is a build problem, not a taste
+one — which is why light-mode accent is `#0066cc` rather than the original
+`#0A84FF` (3.0:1 on white), and why `--color-accent-foreground` exists at all:
+a bright accent on a dark page cannot carry white text.
+
+Radii: `--radius-sm: 6px` through `--radius-2xl: 18px` (the widget tile). There is one shadow,
+`--shadow-overlay`, for genuinely floating layers. There is no gradient token.
 
 ### 7.3 Interaction
 - Micro-interactions: buttons scale to 0.97 on press, spring back on release.
@@ -245,7 +270,8 @@ Still worth having, purely for cost/abuse protection (not monetization):
 - **Inputs** — Text field, textarea, file dropzone, all 12px radius with floating/inline labels and clear error text.
 - **Search** — Global search bar with icon, subtle inset shadow, keyboard shortcut hint (⌘K).
 - **Tabs / Segmented controls** — for quiz-type filters, settings sections.
-- **Toggles** — iOS-style pill switches (immediate/end-of-quiz feedback, dark mode, timer on/off).
+- **Toggles** — iOS-style pill switches (immediate/end-of-quiz feedback, timer on/off).
+- **Theme picker** — a dropdown listbox in Settings → Appearance, offering System plus the six themes of §7.2. Each row carries a three-stripe swatch (page, well, accent) painted on an opaque bordered square, because unbordered dots vanish against a page of their own colour. Not a segmented control: seven options would crowd the row, and a swatch says more than a name.
 - **Dropdowns** — for sort/filter, subtle shadow, rounded 12px menu.
 - **Modals / Sheets** — quiz generation settings, delete-confirmation, upgrade prompts.
 - **Toast notifications** — top-right (desktop) / top (mobile), auto-dismiss, success/error/info variants.
@@ -308,6 +334,7 @@ Still worth having, purely for cost/abuse protection (not monetization):
 | Sharing a quiz | Per-person, by email. The server resolves the address to an account with the Admin SDK and stores the recipient's **uid** on the quiz — never their email, since every recipient can read that array. A recipient may read the quiz and its questions and take it, keeping their own attempts; they cannot rename, retag, delete, duplicate, re-share, or see the owner's results. Attempts stay private to whoever took them, so there is no scoreboard |
 | Sharing reveals account existence | `getUserByEmail` means a failed share distinguishes "no such account" from other errors. Accepted deliberately: for a private app with about five known users, a usable flow is worth more than hiding that, and the alternative (silent success on unknown addresses) would be worse UX |
 | Sharing a quiz does not share its document | Questions are copied into the quiz at generation time, so a recipient gets the questions, explanations and page numbers, but no access to the uploaded file's extracted text. The page links simply don't render for them |
+| Themes | Six named themes, not a light/dark toggle, chosen from a dropdown in Settings (the monkeytype model). Every theme redefines the same token set, so no component knows which is active, and `data-appearance` — not the theme's name — decides `color-scheme` and the `dark:` variant. All six are held to AA by `npm run check:contrast` in CI-able form rather than by eye |
 | Visual direction (§7) | Gradients, card shadows and large radii removed. A white page, hairline surfaces, one flat accent, and hierarchy from type and space. Semantic colour is reserved for meaning — the score ring is one colour, not a traffic light |
 | Deleting a document | Keeps the quizzes generated from it: their questions were copied in at generation time, so they stay playable. Only the page links go dead, and the confirm dialog says so. Deletion runs server-side with `recursiveDelete` so the extracted page text goes with it |
 

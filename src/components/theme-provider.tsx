@@ -2,21 +2,27 @@
 
 import { createContext, useContext, useEffect, useMemo } from "react";
 import { usePersistedValue, useSystemTheme } from "@/lib/persisted-state";
-import type { ThemePreference } from "@/lib/types";
+import { resolveTheme, type Theme, type ThemePreference } from "@/lib/themes";
 
 export const THEME_STORAGE_KEY = "reviewhere.theme";
 
 /**
  * Runs synchronously in <head> before first paint so the resolved theme is on
- * <html> before anything renders — no flash. Kept in sync with the effect below.
+ * <html> before anything renders — no flash. Kept in sync with the effect
+ * below; both stamp `data-theme` (which token block applies) and
+ * `data-appearance` (whether that theme is light or dark, which drives
+ * color-scheme and the `dark:` variant).
+ *
+ * The dark-appearance list is inlined because this runs before any module
+ * loads. If a dark theme is added to `themes.ts`, add its id here too.
  */
-export const themeInitScript = `(function(){try{var p=localStorage.getItem("${THEME_STORAGE_KEY}")||"system";var d=window.matchMedia("(prefers-color-scheme: dark)").matches;var r=p==="system"?(d?"dark":"light"):p;document.documentElement.dataset.theme=r;document.documentElement.style.colorScheme=r;}catch(e){document.documentElement.dataset.theme="light";}})();`;
+export const themeInitScript = `(function(){try{var d=["dark","midnight","slate"];var p=localStorage.getItem("${THEME_STORAGE_KEY}")||"system";var prefersDark=window.matchMedia("(prefers-color-scheme: dark)").matches;var t=p==="system"?(prefersDark?"dark":"light"):p;var a=d.indexOf(t)>-1?"dark":"light";var e=document.documentElement;e.dataset.theme=t;e.dataset.appearance=a;e.style.colorScheme=a;}catch(err){var f=document.documentElement;f.dataset.theme="light";f.dataset.appearance="light";}})();`;
 
 type ThemeContextValue = {
   /** What the user chose, including "system". */
   preference: ThemePreference;
-  /** What "system" actually resolved to right now. */
-  resolved: "light" | "dark";
+  /** The theme actually in effect, once "system" is resolved. */
+  resolved: Theme;
   setPreference: (preference: ThemePreference) => void;
 };
 
@@ -28,12 +34,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     "system",
   );
   const systemTheme = useSystemTheme();
-  const resolved = preference === "system" ? systemTheme : preference;
+  const resolved = resolveTheme(preference, systemTheme === "dark");
 
   // Sync React's resolved value out to the DOM the init script already stamped.
   useEffect(() => {
-    document.documentElement.dataset.theme = resolved;
-    document.documentElement.style.colorScheme = resolved;
+    const element = document.documentElement;
+    element.dataset.theme = resolved.id;
+    element.dataset.appearance = resolved.appearance;
+    element.style.colorScheme = resolved.appearance;
   }, [resolved]);
 
   const value = useMemo(

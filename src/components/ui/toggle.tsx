@@ -9,24 +9,30 @@ export function Toggle({
   label,
   description,
   disabled,
+  hideLabel,
 }: {
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
   label: string;
   description?: string;
   disabled?: boolean;
+  /** For rows that already show the label; the switch keeps its aria-label. */
+  hideLabel?: boolean;
 }) {
   return (
     <label
       className={cn(
-        "flex items-center justify-between gap-4 py-1",
+        "flex items-center gap-4",
+        hideLabel ? "justify-end" : "justify-between py-1",
         disabled ? "opacity-50" : "cursor-pointer",
       )}
     >
-      <span className="flex flex-col">
-        <span className="text-callout text-primary">{label}</span>
-        {description && <span className="text-caption text-secondary">{description}</span>}
-      </span>
+      {!hideLabel && (
+        <span className="flex flex-col">
+          <span className="text-callout text-primary">{label}</span>
+          {description && <span className="text-caption text-secondary">{description}</span>}
+        </span>
+      )}
       <button
         type="button"
         role="switch"
