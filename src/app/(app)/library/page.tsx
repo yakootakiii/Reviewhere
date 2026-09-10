@@ -205,16 +205,16 @@ function Library() {
   const filtered = query !== "" || selectedTags.length > 0 || kind !== "all";
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 py-4">
-      <div className="flex flex-col gap-1">
+    <div className="mx-auto flex max-w-5xl flex-col">
+      <header className="flex flex-col gap-1.5">
         <h1 className="text-display">Library</h1>
         <p className="text-callout text-secondary">
           Every document you&apos;ve uploaded and the quizzes made from them.
         </p>
-      </div>
+      </header>
 
       {items.length > 0 && (
-        <div className="flex flex-col gap-3">
+        <div className="mt-10 flex flex-col gap-4 border-b border-[var(--color-border)] pb-4">
           {/* The top bar's search is sm:-only, so the library carries its own. */}
           <div className="relative sm:hidden">
             <Search aria-hidden className="pointer-events-none absolute top-3 left-3 size-4 text-tertiary" />
@@ -228,7 +228,7 @@ function Library() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <SegmentedControl
               label="Filter by type"
               value={kind}
@@ -247,7 +247,7 @@ function Library() {
               id="library-sort"
               value={sort}
               onChange={(event) => setSort(event.target.value as LibrarySort)}
-              className="h-9 rounded-[10px] bg-surface-secondary px-3 text-caption font-medium text-secondary outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
+              className="h-8 rounded-md bg-transparent px-2 text-caption text-secondary outline-none transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]"
             >
               <option value="recent">Most recent</option>
               <option value="name">Name</option>
@@ -255,7 +255,7 @@ function Library() {
             </select>
 
             <SegmentedControl
-              className="ml-auto"
+              className="ml-auto hidden sm:inline-flex"
               label="View"
               value={view}
               onChange={setView}
@@ -267,7 +267,7 @@ function Library() {
           </div>
 
           {tags.length > 0 && (
-            <ul className="flex flex-wrap gap-2">
+            <ul className="flex flex-wrap items-center gap-1.5">
               {tags.map((tag) => {
                 const on = selectedTags.includes(tag);
                 return (
@@ -280,12 +280,14 @@ function Library() {
                           on ? current.filter((item) => item !== tag) : [...current, tag],
                         )
                       }
+                      // Outlined, so a tag filter doesn't read as another tab
+                      // sitting under the segmented control above it.
                       className={cn(
-                        "rounded-full px-3 py-1 text-caption transition-colors",
+                        "rounded-full border px-2.5 py-1 text-caption transition-colors duration-150",
                         "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]",
                         on
-                          ? "bg-[var(--color-accent)] text-white"
-                          : "bg-surface-secondary text-secondary hover:text-primary",
+                          ? "border-transparent bg-surface-hover text-primary"
+                          : "border-[var(--color-border)] text-secondary hover:border-[var(--color-border-strong)] hover:text-primary",
                       )}
                     >
                       {tag}
@@ -305,6 +307,7 @@ function Library() {
 
       {items.length === 0 ? (
         <EmptyState
+          className="mt-6"
           icon={<LibraryIcon className="size-6" />}
           title="No reviewers yet"
           description="Upload a PDF or PowerPoint and Reviewhere will turn it into a quiz you can take right away."
@@ -316,6 +319,7 @@ function Library() {
         />
       ) : visible.length === 0 ? (
         <EmptyState
+          className="mt-6"
           icon={<SearchX className="size-6" />}
           title="Nothing matches those filters"
           description={
@@ -339,8 +343,10 @@ function Library() {
       ) : (
         <ul
           className={cn(
-            "grid gap-4",
-            view === "grid" ? "sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1",
+            "mt-8",
+            view === "grid"
+              ? "grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
+              : "divide-y divide-[var(--color-border)] border-b border-[var(--color-border)]",
           )}
         >
           {visible.map((item) => (
@@ -352,7 +358,7 @@ function Library() {
       )}
 
       {filtered && visible.length > 0 && (
-        <p className="text-caption text-tertiary">
+        <p className="mt-4 text-caption text-tertiary">
           {visible.length} of {items.length} shown
         </p>
       )}
@@ -400,11 +406,9 @@ function Library() {
 
 function LibrarySkeleton() {
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 py-4" aria-busy="true">
-      <div className="flex flex-col gap-1">
-        <h1 className="text-display">Library</h1>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="mx-auto flex max-w-5xl flex-col" aria-busy="true">
+      <h1 className="text-display">Library</h1>
+      <div className="mt-10 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <CardSkeleton />
         <CardSkeleton />
         <CardSkeleton />

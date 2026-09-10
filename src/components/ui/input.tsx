@@ -24,7 +24,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={inputId} className="text-caption font-medium text-secondary">
+      <label htmlFor={inputId} className="text-caption text-secondary">
         {label}
       </label>
       <input
@@ -33,10 +33,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy || undefined}
         className={cn(
-          // §7.1: 12px radius on inputs.
+          // A single hairline and a generous target — no inner shadow, no fill.
           "h-11 w-full rounded-md bg-surface px-3.5 text-callout text-primary",
-          "border border-[var(--color-border-strong)] placeholder:text-tertiary",
-          "transition-colors duration-200 outline-none",
+          "border border-[var(--color-border)] placeholder:text-tertiary",
+          "transition-colors duration-150 outline-none",
+          "hover:border-[var(--color-border-strong)]",
           "focus-visible:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]",
           "disabled:opacity-50",
           error && "border-[var(--color-error)]",

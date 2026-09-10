@@ -55,7 +55,7 @@ export function CsvPreview({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-3 rounded-xl bg-surface hairline p-4">
+      <div className="flex items-start gap-3 rounded-lg bg-surface hairline p-4">
         <div
           aria-hidden
           className={cn(
@@ -148,7 +148,7 @@ function BrokenRow({
   );
 
   return (
-    <li className="flex flex-col gap-3 rounded-xl bg-[var(--color-error-soft)] p-4">
+    <li className="flex flex-col gap-3 border-l-2 border-[var(--color-error)] py-2 pl-5">
       <div className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <p className="text-callout font-medium">Row {row.rowNumber}</p>

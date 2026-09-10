@@ -187,6 +187,19 @@ Still worth having, purely for cost/abuse protection (not monetization):
 
 ## 7. Design System — "Apple-Inspired Premium UI"
 
+> **Revised after the M6 design pass.** The original §7 called for a blue→violet
+> gradient on primary CTAs, 16–20px card radii, and soft drop shadows. In practice
+> those three things were most of what made the build read as a generic AI-startup
+> template: the gradient appeared on the wordmark, the hero, both progress bars and
+> every primary button, and every section sat in a shadowed card on a grey page.
+>
+> The system is now: **a white page, surfaces separated by hairlines rather than
+> shadows, one flat accent reserved for the thing you should click, and hierarchy
+> carried by type and space.** No gradients anywhere. Radii are 6–14px. Shadow is
+> reserved for genuinely floating layers — sheets, menus, toasts. Cards are used
+> only where they group something; lists use dividers, and sections use rules.
+> Where the subsections below conflict with this, this note wins.
+
 ### 7.1 Design Language
 - Minimalist, elegant, content-first — the UI recedes, the reviewer content leads.
 - SF Pro–inspired typography (use **Inter** or **SF Pro Display/Text** if licensed; Inter is the closest open-source match).
@@ -292,6 +305,7 @@ Still worth having, purely for cost/abuse protection (not monetization):
 | Scoring a retried question | Only the first submission counts. In immediate mode a wrong identification answer can be retried, and revealed after two misses (§2.3), but the score reflects the first answer |
 | Organising by subject (§2.6) | Free-form tags, many per item, on both documents and quizzes — not folders. No hierarchy to maintain and no empty-folder states to design |
 | Library contents | Documents and quizzes in one list behind an All / Documents / Quizzes filter, with client-side search, tag chips, sort, and a grid/list toggle |
+| Visual direction (§7) | Gradients, card shadows and large radii removed. A white page, hairline surfaces, one flat accent, and hierarchy from type and space. Semantic colour is reserved for meaning — the score ring is one colour, not a traffic light |
 | Deleting a document | Keeps the quizzes generated from it: their questions were copied in at generation time, so they stay playable. Only the page links go dead, and the confirm dialog says so. Deletion runs server-side with `recursiveDelete` so the extracted page text goes with it |
 
 ## 9.1 Deferred — asked for in §2, not built

@@ -1,17 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Copy,
-  FileText,
-  ListChecks,
-  PencilLine,
-  Presentation,
-  Sparkles,
-  Tag,
-  Trash2,
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Copy, FileText, PencilLine, Presentation, Tag, Trash2 } from "lucide-react";
 import { Menu, MenuItem } from "@/components/ui/menu";
 import { cn } from "@/lib/utils";
 import type { LibraryItem } from "@/lib/library";
@@ -28,29 +18,100 @@ function formatDate(ms: number): string {
 }
 
 /**
- * Declared at module scope rather than picked with `const Icon = iconFor(item)`:
- * choosing a component type during render resets its state on every render, and
- * `react-hooks/static-components` is an error here.
+ * A quiz needs no icon of its own — it is the default thing here. Only the two
+ * document formats get a glyph, because file type is the one thing you scan
+ * for that the text doesn't already say.
  */
-function ItemIcon({ item }: { item: LibraryItem }) {
-  if (item.kind === "quiz") {
-    return item.quiz.generationMode === "auto" ? (
-      <Sparkles aria-hidden className="size-5" />
-    ) : (
-      <PencilLine aria-hidden className="size-5" />
-    );
-  }
-  return item.document.fileType === "pptx" ? (
-    <Presentation aria-hidden className="size-5" />
-  ) : (
-    <FileText aria-hidden className="size-5" />
+function KindMark({ item }: { item: LibraryItem }) {
+  if (item.kind === "quiz") return null;
+  const Icon = item.document.fileType === "pptx" ? Presentation : FileText;
+  return <Icon aria-hidden strokeWidth={1.75} className="size-4 shrink-0 text-tertiary" />;
+}
+
+function Meta({ item }: { item: LibraryItem }) {
+  return (
+    <p className="truncate text-caption text-tertiary">
+      {item.kind === "quiz" ? "Quiz" : "Document"} · {item.subtitle} · {formatDate(item.createdAt)}
+    </p>
+  );
+}
+
+function Tags({ tags, className }: { tags: string[]; className?: string }) {
+  if (tags.length === 0) return null;
+  return (
+    <ul className={cn("flex flex-wrap items-center gap-1.5", className)}>
+      {tags.slice(0, 3).map((tag) => (
+        <li
+          key={tag}
+          className="truncate rounded-sm bg-surface-secondary px-1.5 py-0.5 text-[11px] text-secondary"
+        >
+          {tag}
+        </li>
+      ))}
+      {tags.length > 3 && <li className="text-[11px] text-tertiary">+{tags.length - 3}</li>}
+    </ul>
+  );
+}
+
+function Actions({
+  item,
+  onAction,
+}: {
+  item: LibraryItem;
+  onAction: (action: CardAction, item: LibraryItem) => void;
+}) {
+  return (
+    <Menu label={`Actions for ${item.title}`}>
+      {(close) => (
+        <>
+          <MenuItem
+            icon={<PencilLine aria-hidden className="size-4 text-tertiary" />}
+            onClick={() => {
+              close();
+              onAction("rename", item);
+            }}
+          >
+            Rename
+          </MenuItem>
+          <MenuItem
+            icon={<Tag aria-hidden className="size-4 text-tertiary" />}
+            onClick={() => {
+              close();
+              onAction("tags", item);
+            }}
+          >
+            Edit tags
+          </MenuItem>
+          {item.kind === "quiz" && (
+            <MenuItem
+              icon={<Copy aria-hidden className="size-4 text-tertiary" />}
+              onClick={() => {
+                close();
+                onAction("duplicate", item);
+              }}
+            >
+              Duplicate
+            </MenuItem>
+          )}
+          <MenuItem
+            destructive
+            icon={<Trash2 aria-hidden className="size-4" />}
+            onClick={() => {
+              close();
+              onAction("delete", item);
+            }}
+          >
+            Delete
+          </MenuItem>
+        </>
+      )}
+    </Menu>
   );
 }
 
 /**
- * One card for both kinds (§2.6). The layout is shared and only the metadata
- * line and the available actions differ — quizzes can be duplicated, documents
- * cannot.
+ * One item, in either of two shapes. The list shape is a genuine row — the
+ * dividers belong to the list, so rows don't each carry a box.
  */
 export function LibraryCard({
   item,
@@ -59,128 +120,50 @@ export function LibraryCard({
 }: {
   item: LibraryItem;
   view: "grid" | "list";
-  /** Omit to render a read-only card, as the dashboard does. */
+  /** Omit to render a read-only item, as the dashboard does. */
   onAction?: (action: CardAction, item: LibraryItem) => void;
 }) {
-  const list = view === "list";
+  const score =
+    item.kind === "quiz" && item.score !== null ? (
+      <span className="shrink-0 text-caption text-secondary tabular-nums">{item.score}%</span>
+    ) : null;
+
+  if (view === "list") {
+    return (
+      <div className="group flex items-center gap-4 py-3.5">
+        <Link href={item.href} className="min-w-0 flex-1 rounded-sm outline-offset-4">
+          <span className="flex items-center gap-2">
+            <KindMark item={item} />
+            <span className="truncate text-callout font-medium">{item.title}</span>
+          </span>
+          <Meta item={item} />
+        </Link>
+        <Tags tags={item.tags} className="hidden sm:flex" />
+        {score}
+        {onAction && <Actions item={item} onAction={onAction} />}
+      </div>
+    );
+  }
 
   return (
-    <Link href={item.href} className="rounded-xl outline-offset-2">
-      <Card
-        interactive
-        className={cn("flex h-full gap-3", list ? "items-center py-3" : "flex-col")}
-      >
-        <div className={cn("flex items-start gap-3", list && "flex-1 items-center")}>
-          <div
-            aria-hidden
-            className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-[var(--color-accent)]"
-          >
-            <ItemIcon item={item} />
-          </div>
+    <div className="group relative flex h-full flex-col rounded-lg bg-surface hairline p-4 transition-colors duration-150 hover:border-[var(--color-border-strong)]">
+      <div className="flex items-start gap-2">
+        <Link href={item.href} className="min-w-0 flex-1 rounded-sm outline-offset-4">
+          <span className="flex items-center gap-2">
+            <KindMark item={item} />
+            <span className="truncate text-callout font-medium">{item.title}</span>
+          </span>
+          <Meta item={item} />
+        </Link>
+        {onAction && <Actions item={item} onAction={onAction} />}
+      </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="truncate text-callout font-medium" title={item.title}>
-                {item.title}
-              </h3>
-              <span className="shrink-0 rounded-full bg-surface-secondary px-2 py-0.5 text-[11px] text-tertiary">
-                {item.kind === "quiz" ? "Quiz" : "Document"}
-              </span>
-            </div>
-            <p className="truncate text-caption text-secondary">
-              {item.subtitle} · {formatDate(item.createdAt)}
-            </p>
-          </div>
-
-          {list && <ScoreBadge item={item} />}
-
-          {onAction && (
-          <Menu label={`Actions for ${item.title}`}>
-            {(close) => (
-              <>
-                <MenuItem
-                  icon={<PencilLine aria-hidden className="size-4" />}
-                  onClick={() => {
-                    close();
-                    onAction("rename", item);
-                  }}
-                >
-                  Rename
-                </MenuItem>
-                <MenuItem
-                  icon={<Tag aria-hidden className="size-4" />}
-                  onClick={() => {
-                    close();
-                    onAction("tags", item);
-                  }}
-                >
-                  Edit tags
-                </MenuItem>
-                {item.kind === "quiz" && (
-                  <MenuItem
-                    icon={<Copy aria-hidden className="size-4" />}
-                    onClick={() => {
-                      close();
-                      onAction("duplicate", item);
-                    }}
-                  >
-                    Duplicate
-                  </MenuItem>
-                )}
-                <MenuItem
-                  destructive
-                  icon={<Trash2 aria-hidden className="size-4" />}
-                  onClick={() => {
-                    close();
-                    onAction("delete", item);
-                  }}
-                >
-                  Delete
-                </MenuItem>
-              </>
-            )}
-          </Menu>
-          )}
+      {(item.tags.length > 0 || score) && (
+        <div className="mt-6 flex items-end justify-between gap-3">
+          <Tags tags={item.tags} />
+          {score}
         </div>
-
-        {!list && (
-          <div className="mt-auto flex items-center justify-between gap-2">
-            <TagRow tags={item.tags} />
-            <ScoreBadge item={item} />
-          </div>
-        )}
-
-        {list && item.tags.length > 0 && <TagRow tags={item.tags} />}
-      </Card>
-    </Link>
-  );
-}
-
-function TagRow({ tags }: { tags: string[] }) {
-  if (tags.length === 0) return <span />;
-  return (
-    <ul className="flex min-w-0 flex-wrap gap-1">
-      {tags.slice(0, 3).map((tag) => (
-        <li
-          key={tag}
-          className="truncate rounded-full bg-surface-secondary px-2 py-0.5 text-[11px] text-secondary"
-        >
-          {tag}
-        </li>
-      ))}
-      {tags.length > 3 && (
-        <li className="text-[11px] text-tertiary">+{tags.length - 3}</li>
       )}
-    </ul>
-  );
-}
-
-function ScoreBadge({ item }: { item: LibraryItem }) {
-  if (item.kind !== "quiz" || item.score === null) return null;
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1 text-caption text-secondary tabular-nums">
-      <ListChecks aria-hidden className="size-3.5" />
-      {item.score}%
-    </span>
+    </div>
   );
 }

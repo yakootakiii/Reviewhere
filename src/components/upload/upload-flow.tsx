@@ -82,18 +82,13 @@ export function UploadFlow() {
   if (stage.name === "done") {
     const { result } = stage;
     return (
-      <div className="flex flex-col items-center gap-4 rounded-xl bg-surface hairline p-8 text-center shadow-[var(--shadow-soft)]">
-        <div
-          aria-hidden
-          className="flex size-12 items-center justify-center rounded-2xl bg-[var(--color-success-soft)] text-[var(--color-success)]"
-        >
-          <CheckCircle2 className="size-6" />
-        </div>
-        <div className="flex flex-col gap-1">
-          <h2 className="text-title2">{result.fileName}</h2>
-          <p className="text-callout text-secondary">
-            {result.pageCount} {result.fileType === "pptx" ? "slides" : "pages"} read and ready.
+      <div className="flex flex-col items-start gap-5">
+        <div className="flex flex-col gap-1.5">
+          <p className="flex items-center gap-2 text-caption text-[var(--color-success)]">
+            <CheckCircle2 aria-hidden className="size-4" />
+            {result.pageCount} {result.fileType === "pptx" ? "slides" : "pages"} read and ready
           </p>
+          <h2 className="text-title1 break-words">{result.fileName}</h2>
           {result.emptyPages.length > 0 && (
             <p className="text-caption text-tertiary">
               {result.emptyPages.length} page{result.emptyPages.length === 1 ? "" : "s"} had no
@@ -125,17 +120,12 @@ export function UploadFlow() {
   const Icon = file.name.toLowerCase().endsWith(".pptx") ? Presentation : FileText;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-surface hairline p-6 shadow-[var(--shadow-soft)]">
+    <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <div
-          aria-hidden
-          className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-[var(--color-accent)]"
-        >
-          <Icon className="size-5" />
-        </div>
+        <Icon aria-hidden strokeWidth={1.75} className="size-4 shrink-0 text-tertiary" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-callout font-medium">{file.name}</p>
-          <p className="text-caption text-secondary">{formatBytes(file.size)}</p>
+          <p className="text-caption text-tertiary">{formatBytes(file.size)}</p>
         </div>
         {uploading && (
           <IconButton label="Cancel upload" onClick={() => abortRef.current?.()}>
@@ -150,11 +140,11 @@ export function UploadFlow() {
         aria-valuemax={100}
         aria-valuenow={uploading ? percent : undefined}
         aria-label={uploading ? "Upload progress" : "Analyzing document"}
-        className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
+        className="h-[3px] overflow-hidden rounded-full bg-[var(--color-border)]"
       >
         <div
           className={cn(
-            "h-full rounded-full bg-accent-gradient transition-[width] duration-300",
+            "h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-300",
             // Page count is unknown until parsing finishes, so show motion
             // rather than a fake percentage (§7.7: keep loading copy honest).
             !uploading && "w-full animate-pulse",

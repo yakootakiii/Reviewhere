@@ -1,6 +1,10 @@
 import { cn } from "@/lib/utils";
 
-/** §7.1: 20px radius, hairline border, soft shadow — no nested cards. */
+/**
+ * A hairline-bounded surface. Deliberately plain: no shadow, no lift on hover,
+ * modest radius. Reach for a card only when it groups things that belong
+ * together — a list of rows is better served by dividers than by boxes.
+ */
 export function Card({
   className,
   interactive,
@@ -9,9 +13,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-xl bg-surface hairline p-4 shadow-[var(--shadow-soft)]",
+        "rounded-lg bg-surface hairline p-5",
         interactive &&
-          "transition-all duration-200 [transition-timing-function:var(--ease-out-soft)] hover:-translate-y-0.5 hover:shadow-[var(--shadow-lifted)]",
+          "transition-colors duration-150 [transition-timing-function:var(--ease-out-soft)] hover:border-[var(--color-border-strong)]",
         className,
       )}
       {...props}

@@ -107,9 +107,14 @@ This is the central architectural constraint. Question generation has two indepe
 
 ## Design system
 
-The UI is Apple-inspired and §7 of the spec is prescriptive — read it before writing any component. Tokens live in [src/app/globals.css](src/app/globals.css) as a Tailwind 4 `@theme`; use the semantic utilities (`bg-surface`, `text-secondary`, `rounded-xl`, `text-title2`) rather than raw hex or arbitrary sizes, so light and dark stay in sync.
+The UI is Apple-inspired and §7 of the spec is prescriptive — read the note at the top of §7 before writing any component, since it supersedes the subsections beneath it. Tokens live in [src/app/globals.css](src/app/globals.css) as a Tailwind 4 `@theme`; use the semantic utilities (`bg-surface`, `text-secondary`, `rounded-lg`, `text-title2`) rather than raw hex or arbitrary sizes, so light and dark stay in sync.
 
-One deliberate deviation: light-mode `--color-accent` is `#0071e3`, not the spec's `#0A84FF`, which sits at ~3.0:1 on white and fails the AA contrast §6 requires. `#0A84FF` is retained for the gradient and for dark mode.
+**The system is deliberately quiet.** White page, surfaces told apart by hairlines, one flat accent for the thing you should click, hierarchy from type and space. Things that are *not* used, because together they made the build read as a generic template: gradients of any kind, shadows on in-page surfaces (shadow is for sheets, menus and toasts only), radii above 14px, tinted icon tiles, decorative pills, and hover transforms. Reach for a card only when it groups something — a list of rows wants dividers, and a page section wants a rule.
+
+Two implementation notes that are easy to get wrong:
+
+- **`--color-accent-foreground` is what sits on the accent fill** — white in light mode, near-black in dark. White on the dark-mode accent is 2.6:1 and fails AA; the paired token is 7.5:1. Never hardcode `text-white` on an accent surface.
+- **`cn()` extends tailwind-merge with this app's type scale** ([src/lib/utils.ts](src/lib/utils.ts)). Without that, `text-caption` and `text-secondary` collide in one class group and the later silently deletes the earlier — which really happened, and rendered the primary button's label in body colour. If you add a size to `--text-*`, add it to that list too.
 
 Accessibility is a hard requirement, not polish: WCAG 2.1 AA contrast, visible focus rings (2px accent, 2px offset — never removed), full keyboard navigation including quiz shortcuts (1–4 for MCQ, Enter to submit), and a reduced-motion mode that disables spring animations. The global `prefers-reduced-motion` block in `globals.css` handles CSS transitions; Motion components additionally check `useReducedMotion()`.
 

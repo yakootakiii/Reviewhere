@@ -29,18 +29,20 @@ export function AnswerFeedback({
   const showAnswer = correct || revealed || question.type === "mcq";
 
   return (
+    // A coloured rule rather than a filled panel: the verdict is legible at a
+    // glance without the answer area changing colour under the reader.
     <div
       role="status"
       className={cn(
-        "flex flex-col gap-3 rounded-xl p-4",
-        correct ? "bg-[var(--color-success-soft)]" : "bg-[var(--color-error-soft)]",
+        "flex flex-col gap-3 border-l-2 py-1 pl-5",
+        correct ? "border-[var(--color-success)]" : "border-[var(--color-error)]",
       )}
     >
       <div className="flex items-center gap-2">
         {correct ? (
-          <CheckCircle2 aria-hidden className="size-5 text-[var(--color-success)]" />
+          <CheckCircle2 aria-hidden className="size-4 text-[var(--color-success)]" />
         ) : (
-          <XCircle aria-hidden className="size-5 text-[var(--color-error)]" />
+          <XCircle aria-hidden className="size-4 text-[var(--color-error)]" />
         )}
         <p className="text-callout font-medium">{correct ? "Correct" : "Not quite"}</p>
       </div>

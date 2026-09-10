@@ -82,8 +82,8 @@ export default function DocumentPage({ params }: { params: Promise<{ documentId:
   const unit = document.fileType === "pptx" ? "slides" : "pages";
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-8 py-4">
-      <div className="flex flex-col gap-4">
+    <div className="mx-auto flex max-w-4xl flex-col gap-14">
+      <div className="flex flex-col gap-5">
         <Link
           href="/library"
           className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-secondary hover:text-primary"
@@ -92,20 +92,13 @@ export default function DocumentPage({ params }: { params: Promise<{ documentId:
           Library
         </Link>
 
-        <div className="flex items-start gap-3">
-          <div
-            aria-hidden
-            className="flex size-12 shrink-0 items-center justify-center rounded-[12px] bg-accent-soft text-[var(--color-accent)]"
-          >
-            <Icon className="size-6" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="text-title1 break-words">{document.fileName}</h1>
-            <p className="text-callout text-secondary">
-              {document.pageCount} {unit} · {quizzes.length} quiz
-              {quizzes.length === 1 ? "" : "zes"}
-            </p>
-          </div>
+        <div className="flex flex-col gap-2">
+          <p className="flex items-center gap-2 text-caption text-tertiary">
+            <Icon aria-hidden strokeWidth={1.75} className="size-4" />
+            {document.pageCount} {unit} · {quizzes.length} quiz
+            {quizzes.length === 1 ? "" : "zes"}
+          </p>
+          <h1 className="text-display break-words">{document.fileName}</h1>
         </div>
       </div>
 
@@ -114,8 +107,8 @@ export default function DocumentPage({ params }: { params: Promise<{ documentId:
         label={quizzes.length > 0 ? "Generate another quiz" : "Generate quiz"}
       />
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-title2">Quizzes</h2>
+      <section className="flex flex-col gap-5">
+        <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">Quizzes</h2>
         {quizzes.length === 0 ? (
           <EmptyState
             icon={<Sparkles className="size-6" />}

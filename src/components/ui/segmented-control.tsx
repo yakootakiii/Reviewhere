@@ -39,7 +39,7 @@ export function SegmentedControl<T extends string>({
       aria-label={label}
       onKeyDown={onKeyDown}
       className={cn(
-        "inline-flex items-center gap-1 rounded-[10px] bg-surface-secondary p-1",
+        "inline-flex items-center rounded-md bg-surface-secondary p-0.5",
         className,
       )}
     >
@@ -54,11 +54,11 @@ export function SegmentedControl<T extends string>({
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option.value)}
             className={cn(
-              "inline-flex flex-1 items-center justify-center gap-1.5 rounded-[7px] px-3 py-1.5",
-              "text-caption font-medium whitespace-nowrap transition-all duration-200",
-              "[transition-timing-function:var(--ease-out-soft)] active:scale-[0.97]",
+              "inline-flex flex-1 items-center justify-center gap-1.5 rounded-[7px] px-3 py-1",
+              "text-caption whitespace-nowrap transition-colors duration-150",
+              "[transition-timing-function:var(--ease-out-soft)]",
               selected
-                ? "bg-surface text-primary shadow-[0_1px_3px_rgb(0_0_0/0.1)]"
+                ? "bg-surface text-primary hairline"
                 : "text-secondary hover:text-primary",
             )}
           >

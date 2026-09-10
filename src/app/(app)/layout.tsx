@@ -18,7 +18,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* §6: keyboard users shouldn't have to tab the whole nav on every page. */}
       <a
         href="#main"
-        className="sr-only rounded-md bg-surface px-4 py-2 text-callout font-medium shadow-[var(--shadow-lifted)] focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:outline-2 focus:outline-offset-2 focus:outline-[var(--color-accent)]"
+        className="sr-only rounded-md bg-surface px-4 py-2 text-callout font-medium shadow-[var(--shadow-overlay)] focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-50 focus:outline-2 focus:outline-offset-2 focus:outline-[var(--color-accent)]"
       >
         Skip to content
       </a>
@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         {/* Bottom padding clears the mobile tab bar. */}
-        <main id="main" className="flex-1 px-4 pt-2 pb-24 sm:px-6 lg:pb-10">
+        <main id="main" className="page flex-1 pt-6 pb-28 sm:pt-10 lg:pb-20">
           <AuthGuard>{children}</AuthGuard>
         </main>
       </div>

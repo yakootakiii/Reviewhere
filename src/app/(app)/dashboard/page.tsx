@@ -11,23 +11,26 @@ export default function DashboardPage() {
   const firstName = (profile?.displayName ?? user?.displayName ?? "").split(" ")[0];
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-6 py-4">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="flex flex-col gap-1">
-          <h1 className="text-display">{firstName ? `Hi, ${firstName}` : "My Reviewers"}</h1>
+    <div className="mx-auto flex max-w-5xl flex-col">
+      <header className="flex flex-wrap items-end justify-between gap-6">
+        <div className="flex flex-col gap-1.5">
+          <h1 className="text-display">{firstName ? `Hi, ${firstName}` : "My reviewers"}</h1>
           <p className="text-callout text-secondary">
-            Pick up a reviewer, or upload something new.
+            Pick up where you left off, or start something new.
           </p>
         </div>
         <Link href="/create">
           <Button>
-            <Plus aria-hidden className="size-[18px]" />
-            New Reviewer
+            <Plus aria-hidden className="size-4" />
+            New reviewer
           </Button>
         </Link>
-      </div>
+      </header>
 
-      <RecentItems max={6} />
+      <div className="mt-12">
+        <h2 className="mb-5 text-caption tracking-[0.06em] text-tertiary uppercase">Recent</h2>
+        <RecentItems max={6} />
+      </div>
     </div>
   );
 }

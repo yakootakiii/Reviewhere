@@ -65,13 +65,13 @@ export function TagEditor({
           <ul className="flex flex-wrap gap-2">
             {tags.map((tag) => (
               <li key={tag}>
-                <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft py-1 pr-1 pl-2.5 text-caption text-[var(--color-accent)]">
+                <span className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border)] py-1 pr-1 pl-2.5 text-caption text-primary">
                   {tag}
                   <button
                     type="button"
                     aria-label={`Remove tag ${tag}`}
                     onClick={() => setTags((current) => current.filter((item) => item !== tag))}
-                    className="inline-flex size-5 items-center justify-center rounded-full hover:bg-[var(--color-accent)]/15 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]"
+                    className="inline-flex size-5 items-center justify-center rounded-full text-tertiary transition-colors hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]"
                   >
                     <X aria-hidden className="size-3" />
                   </button>
@@ -119,7 +119,7 @@ export function TagEditor({
                   <button
                     type="button"
                     onClick={() => add(suggestion)}
-                    className="rounded-full bg-surface-secondary px-2.5 py-1 text-caption text-secondary transition-colors hover:bg-surface-hover hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]"
+                    className="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-caption text-secondary transition-colors hover:border-[var(--color-border-strong)] hover:text-primary focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]"
                   >
                     + {suggestion}
                   </button>

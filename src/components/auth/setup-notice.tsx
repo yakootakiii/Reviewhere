@@ -9,7 +9,7 @@ export function SetupNotice() {
     <div className="mx-auto flex max-w-lg flex-col items-center gap-3 px-6 py-20 text-center">
       <div
         aria-hidden
-        className="flex size-14 items-center justify-center rounded-2xl bg-[var(--color-warning-soft)] text-[var(--color-warning)]"
+        className="text-[var(--color-warning)]"
       >
         <KeyRound className="size-6" />
       </div>

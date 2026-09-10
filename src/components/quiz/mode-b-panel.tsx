@@ -209,7 +209,7 @@ export function ModeBPanel({
           </p>
         )}
 
-        <pre className="max-h-72 overflow-auto rounded-xl bg-surface-secondary p-4 text-caption whitespace-pre-wrap">
+        <pre className="max-h-72 overflow-auto rounded-lg bg-surface-secondary p-4 text-caption whitespace-pre-wrap">
           {built?.prompt}
         </pre>
       </section>

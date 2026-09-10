@@ -71,7 +71,7 @@ export function UserMenu() {
           role="menu"
           className={cn(
             "absolute right-0 z-50 mt-2 w-60 origin-top-right overflow-hidden rounded-md",
-            "bg-surface hairline p-1 shadow-[var(--shadow-lifted)]",
+            "bg-surface hairline p-1 shadow-[var(--shadow-overlay)]",
           )}
         >
           <div className="flex flex-col gap-0.5 px-3 py-2.5">

@@ -91,8 +91,8 @@ export function QuizRunner({
   );
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-5">
-      <div className="flex flex-col gap-2">
+    <div className="mx-auto flex max-w-2xl flex-col gap-10">
+      <div className="flex flex-col gap-2.5">
         <div className="flex items-center justify-between gap-3">
           <span className="text-caption text-secondary tabular-nums">
             {answeredCount(session)} of {questions.length} answered
@@ -110,12 +110,14 @@ export function QuizRunner({
       <AnimatePresence mode="wait">
         <motion.div
           key={question.id}
-          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
+          // A cross-fade, not a slide: moving the question sideways makes the
+          // reader chase it, and adds nothing they need to know.
+          initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
           // The exiting card stays mounted until its animation ends; without this
           // a fast second click can land on the question you just left.
-          exit={reduceMotion ? { opacity: 0, pointerEvents: "none" } : { opacity: 0, x: -24, pointerEvents: "none" }}
-          transition={{ duration: reduceMotion ? 0.12 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+          exit={{ opacity: 0, pointerEvents: "none" }}
+          transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.22, 1, 0.36, 1] }}
         >
           <QuestionStage
             key={question.id}
@@ -234,7 +236,7 @@ function QuestionStage({
   const locked = immediate && checked && (correct || revealed || question.type === "mcq");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-7">
       <QuestionCard
         question={question}
         index={index}
@@ -263,7 +265,7 @@ function QuestionStage({
         />
       )}
 
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 border-t border-[var(--color-border)] pt-5">
         {onBack ? (
           <Button variant="ghost" onClick={onBack} disabled={finishing}>
             Back

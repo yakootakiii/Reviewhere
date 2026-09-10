@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Monitor, Moon, ShieldCheck, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { Sheet } from "@/components/ui/sheet";
@@ -110,13 +109,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 py-4">
-      <div className="flex flex-col gap-1">
+    // Settings is a list of settings, not three boxes: each group is a heading
+    // and a rule, which is what a card here was standing in for anyway.
+    <div className="mx-auto flex max-w-2xl flex-col">
+      <header className="flex flex-col gap-1.5">
         <h1 className="text-display">Settings</h1>
         <p className="text-callout text-secondary">Your account and study preferences.</p>
-      </div>
+      </header>
 
-      <Card className="flex flex-col gap-5 p-6">
+      <section className="mt-12 flex flex-col gap-6">
         <div className="flex items-center gap-4">
           <div className="flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-secondary text-body font-semibold text-secondary">
             {user.photoURL ? (
@@ -127,8 +128,8 @@ export default function SettingsPage() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <CardTitle className="truncate">{name || "Your account"}</CardTitle>
-            <CardDescription className="truncate">{user.email}</CardDescription>
+            <p className="truncate text-title2">{name || "Your account"}</p>
+            <p className="truncate text-callout text-secondary">{user.email}</p>
           </div>
         </div>
 
@@ -145,8 +146,8 @@ export default function SettingsPage() {
         </div>
 
         {!user.emailVerified && user.providerData.some((p) => p.providerId === "password") && (
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-[var(--color-warning-soft)] px-4 py-3">
-            <p className="text-caption text-primary">Your email address isn&apos;t verified yet.</p>
+          <div className="flex flex-wrap items-center justify-between gap-3 border-l-2 border-[var(--color-warning)] py-1 pl-4">
+            <p className="text-caption text-secondary">Your email address isn&apos;t verified yet.</p>
             <Button
               size="sm"
               variant="secondary"
@@ -164,24 +165,16 @@ export default function SettingsPage() {
           </div>
         )}
 
-        <div className="flex flex-col gap-2">
-          <span className="text-caption font-medium text-secondary">Linked sign-in methods</span>
-          <div className="flex flex-wrap gap-2">
-            {user.providerData.map((provider) => (
-              <span
-                key={provider.providerId}
-                className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-3 py-1 text-caption text-secondary"
-              >
-                <ShieldCheck aria-hidden className="size-3.5" />
-                {providerLabel(provider.providerId)}
-              </span>
-            ))}
-          </div>
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="text-caption text-tertiary">Signed in with</span>
+          <span className="text-caption text-secondary">
+            {user.providerData.map((provider) => providerLabel(provider.providerId)).join(", ")}
+          </span>
         </div>
-      </Card>
+      </section>
 
-      <Card id="preferences" className="flex flex-col gap-5 p-6">
-        <CardTitle>Preferences</CardTitle>
+      <section id="preferences" className="mt-14 flex flex-col gap-5">
+        <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">Preferences</h2>
 
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-col">
@@ -219,20 +212,18 @@ export default function SettingsPage() {
           checked={preferences.timerEnabled}
           onCheckedChange={(checked) => onPreferenceChange({ timerEnabled: checked })}
         />
-      </Card>
+      </section>
 
-      <Card className="flex flex-col gap-3 p-6">
-        <CardTitle>Delete account</CardTitle>
-        <CardDescription>
+      <section className="mt-14 flex flex-col items-start gap-2 border-t border-[var(--color-border)] pt-8">
+        <h2 className="text-title2">Delete account</h2>
+        <p className="max-w-[52ch] text-callout text-secondary">
           Permanently removes your account, documents, and every quiz you&apos;ve generated. This
           can&apos;t be undone.
-        </CardDescription>
-        <div>
-          <Button variant="destructive" onClick={() => setConfirmOpen(true)}>
-            Delete account
-          </Button>
-        </div>
-      </Card>
+        </p>
+        <Button variant="secondary" className="mt-3 text-[var(--color-error)]" onClick={() => setConfirmOpen(true)}>
+          Delete account
+        </Button>
+      </section>
 
       {/* §2.7: destructive action gated behind a typed confirmation. */}
       <Sheet

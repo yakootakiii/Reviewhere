@@ -14,17 +14,14 @@ export function ScoreRing({
   className?: string;
 }) {
   const reduceMotion = useReducedMotion();
-  const stroke = 12;
+  const stroke = 3;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const filled = circumference * (Math.min(Math.max(score, 0), 100) / 100);
 
-  const tone =
-    score >= 80
-      ? "var(--color-success)"
-      : score >= 50
-        ? "var(--color-warning)"
-        : "var(--color-error)";
+  // One colour, not a traffic light: the number already says how it went, and
+  // grading the ring red turns a study tool into a scold.
+  const tone = "var(--color-accent)";
 
   return (
     <div className={cn("relative inline-flex", className)} style={{ width: size, height: size }}>
@@ -34,7 +31,7 @@ export function ScoreRing({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="var(--color-surface-secondary)"
+          stroke="var(--color-border)"
           strokeWidth={stroke}
         />
         {/* A round line cap on a zero-length arc renders as a stray dot. */}
@@ -59,7 +56,10 @@ export function ScoreRing({
         )}
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-display tabular-nums">{score}%</span>
+        <span className="text-[40px] leading-none font-semibold tracking-[-0.03em] tabular-nums">
+          {score}
+          <span className="text-title2 text-tertiary">%</span>
+        </span>
       </div>
     </div>
   );

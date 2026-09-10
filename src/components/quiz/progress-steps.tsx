@@ -26,12 +26,12 @@ export function ProgressSteps({
           key={index}
           aria-hidden
           className={cn(
-            "h-1.5 flex-1 rounded-full transition-colors duration-200",
+            "h-[3px] flex-1 rounded-full transition-colors duration-200",
             index === current
               ? "bg-[var(--color-accent)]"
               : answered.has(index)
-                ? "bg-[var(--color-accent)]/40"
-                : "bg-surface-secondary",
+                ? "bg-[var(--color-border-strong)]"
+                : "bg-[var(--color-border)]",
           )}
         />
       ))}

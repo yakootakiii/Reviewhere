@@ -35,12 +35,14 @@ export function TopBar() {
   return (
     <header
       className={cn(
-        "sticky top-0 z-30 flex items-center gap-3 px-4 py-3 transition-shadow duration-200 sm:px-6",
-        scrolled ? "surface-blur border-b border-[var(--color-border)]" : "bg-[var(--color-bg)]",
+        "sticky top-0 z-30 flex h-14 items-center gap-3 px-5 transition-colors duration-200 sm:px-8",
+        scrolled
+          ? "surface-blur border-b border-[var(--color-border)]"
+          : "border-b border-transparent bg-[var(--color-bg)]",
       )}
     >
-      <Link href="/dashboard" className="text-title2 tracking-tight lg:hidden">
-        Review<span className="text-accent-gradient">here</span>
+      <Link href="/dashboard" className="text-callout font-semibold tracking-[-0.01em] lg:hidden">
+        Reviewhere<span className="text-[var(--color-accent)]">.</span>
       </Link>
 
       <form
@@ -63,13 +65,14 @@ export function TopBar() {
           aria-label="Search reviewers"
           className={cn(
             "h-9 w-full rounded-md bg-surface-secondary pr-14 pl-9 text-callout text-primary",
-            "placeholder:text-tertiary outline-none transition-colors",
+            "placeholder:text-tertiary outline-none transition-colors duration-150",
+            "hover:bg-surface-hover",
             "focus-visible:bg-surface focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]",
           )}
         />
         <kbd
           aria-hidden
-          className="absolute right-2.5 rounded border border-[var(--color-border)] px-1.5 py-0.5 text-[11px] text-tertiary"
+          className="absolute right-2.5 text-[11px] text-tertiary"
         >
           ⌘K
         </kbd>

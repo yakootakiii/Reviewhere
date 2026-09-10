@@ -86,7 +86,7 @@ export function Sheet({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/25 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-black/30"
           />
           <motion.div
             ref={panelRef}
@@ -94,29 +94,28 @@ export function Sheet({
             aria-modal="true"
             aria-label={title}
             tabIndex={-1}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ duration: reduceMotion ? 0.12 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+            // A short rise, no scale: the panel arrives rather than pops.
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 }}
+            transition={{ duration: reduceMotion ? 0.1 : 0.2, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "relative flex max-h-[90dvh] w-full flex-col bg-surface shadow-[var(--shadow-lifted)]",
-              "rounded-t-2xl sm:max-w-lg sm:rounded-xl",
+              "relative flex max-h-[90dvh] w-full flex-col bg-surface shadow-[var(--shadow-overlay)]",
+              "rounded-t-xl sm:max-w-md sm:rounded-xl",
               className,
             )}
           >
-            <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-2">
-              <div className="flex flex-col gap-1">
+            <div className="flex items-start justify-between gap-4 px-6 pt-6 pb-1">
+              <div className="flex flex-col gap-1.5">
                 <h2 className="text-title2">{title}</h2>
                 {description && <p className="text-callout text-secondary">{description}</p>}
               </div>
-              <IconButton label="Close" onClick={onClose} className="-mt-1 -mr-2">
-                <X aria-hidden className="size-[18px]" />
+              <IconButton label="Close" onClick={onClose} className="-mt-0.5 -mr-2">
+                <X aria-hidden className="size-4" />
               </IconButton>
             </div>
-            {children && <div className="flex-1 overflow-y-auto px-6 py-4">{children}</div>}
-            {footer && (
-              <div className="flex justify-end gap-2 px-6 pt-2 pb-6 sm:pb-6">{footer}</div>
-            )}
+            {children && <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>}
+            {footer && <div className="flex justify-end gap-2 px-6 pt-3 pb-6">{footer}</div>}
           </motion.div>
         </div>
       )}

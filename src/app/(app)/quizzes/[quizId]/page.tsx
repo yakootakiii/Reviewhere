@@ -3,9 +3,8 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, History, Play, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowLeft, History, Play, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { CardSkeleton, EmptyState, ErrorPanel } from "@/components/ui/feedback";
 import { Menu, MenuItem } from "@/components/ui/menu";
@@ -124,8 +123,8 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 py-4">
-      <div className="flex flex-col gap-4">
+    <div className="mx-auto flex max-w-3xl flex-col gap-14">
+      <div className="flex flex-col gap-5">
         {sourceExists ? (
           <Link
             href={`/documents/${quiz.documentId}`}
@@ -157,42 +156,41 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
           </p>
         </div>
 
-        {(best !== null || attempts.length > 0) && (
-          <div className="flex flex-wrap gap-6">
-            <div className="flex flex-col">
-              <span className="text-caption text-secondary">Best score</span>
-              <span className="text-title1 tabular-nums">{best}%</span>
+        {attempts.length > 0 && (
+          <dl className="flex flex-wrap gap-x-10 gap-y-3 border-t border-[var(--color-border)] pt-5">
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-caption text-tertiary">Best score</dt>
+              <dd className="text-title1 tabular-nums">{best}%</dd>
             </div>
-            <div className="flex flex-col">
-              <span className="text-caption text-secondary">Attempts</span>
-              <span className="text-title1 tabular-nums">{attempts.length}</span>
+            <div className="flex flex-col gap-0.5">
+              <dt className="text-caption text-tertiary">Attempts</dt>
+              <dd className="text-title1 tabular-nums">{attempts.length}</dd>
             </div>
-          </div>
+          </dl>
         )}
 
-        <div className="flex flex-wrap gap-2">
+        <div className="mt-1 flex flex-wrap gap-2">
           {resumable ? (
             <>
               <Button onClick={() => start(false)}>
-                <Play aria-hidden className="size-[18px]" />
+                <Play aria-hidden className="size-4" />
                 Resume · {answeredCount(resumable)} of {resumable.questionIds.length} answered
               </Button>
               <Button variant="secondary" onClick={() => start(true)}>
-                <RotateCcw aria-hidden className="size-[18px]" />
                 Start over
               </Button>
             </>
           ) : (
             <Button onClick={() => start(true)}>
-              <Play aria-hidden className="size-[18px]" />
+              <Play aria-hidden className="size-4" />
               {attempts.length > 0 ? "Take it again" : "Start quiz"}
             </Button>
           )}
         </div>
       </div>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-title2">Attempt history</h2>
+      <section className="flex flex-col gap-5">
+        <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">Attempt history</h2>
         {attempts.length === 0 ? (
           <EmptyState
             icon={<History className="size-6" />}
@@ -200,47 +198,39 @@ export default function QuizPage({ params }: { params: Promise<{ quizId: string 
             description="Take the quiz and your score, timing and a full review will show up here."
           />
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
             {attempts.map((attempt) => (
-              <li key={attempt.id}>
-                <Link href={`/attempts/${attempt.id}`} className="block rounded-xl outline-offset-2">
-                  <Card interactive className="flex items-center justify-between gap-4 py-3">
-                    <div className="flex flex-col">
-                      <span className="text-callout font-medium tabular-nums">
-                        {attempt.score}%
-                      </span>
-                      <span className="text-caption text-secondary">
-                        {attempt.completedAt?.toDate?.().toLocaleString(undefined, {
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                        }) ?? "Just now"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-caption text-tertiary">
-                        {attempt.answers.length} questions
-                        {attempt.durationSec !== undefined &&
-                          ` · ${formatDuration(attempt.durationSec)}`}
-                      </span>
-                      <Menu label={`Actions for the ${attempt.score}% attempt`}>
-                        {(close) => (
-                          <MenuItem
-                            destructive
-                            icon={<Trash2 aria-hidden className="size-4" />}
-                            onClick={() => {
-                              close();
-                              setRemoving(attempt);
-                            }}
-                          >
-                            Delete attempt
-                          </MenuItem>
-                        )}
-                      </Menu>
-                    </div>
-                  </Card>
+              <li key={attempt.id} className="flex items-center gap-4 py-3.5">
+                <Link
+                  href={`/attempts/${attempt.id}`}
+                  className="flex min-w-0 flex-1 items-baseline gap-3 rounded-sm outline-offset-4"
+                >
+                  <span className="text-callout font-medium tabular-nums">{attempt.score}%</span>
+                  <span className="truncate text-caption text-tertiary">
+                    {attempt.completedAt?.toDate?.().toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }) ?? "Just now"}
+                    {attempt.durationSec !== undefined &&
+                      ` · ${formatDuration(attempt.durationSec)}`}
+                  </span>
                 </Link>
+                <Menu label={`Actions for the ${attempt.score}% attempt`}>
+                  {(close) => (
+                    <MenuItem
+                      destructive
+                      icon={<Trash2 aria-hidden className="size-4" />}
+                      onClick={() => {
+                        close();
+                        setRemoving(attempt);
+                      }}
+                    >
+                      Delete attempt
+                    </MenuItem>
+                  )}
+                </Menu>
               </li>
             ))}
           </ul>

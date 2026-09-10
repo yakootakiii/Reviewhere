@@ -26,9 +26,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         <Skeleton className="h-9 w-52" />
         <Skeleton className="h-4 w-72" />
         <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <Skeleton className="h-40 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
-          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-28 rounded-lg" />
+          <Skeleton className="h-28 rounded-lg" />
+          <Skeleton className="h-28 rounded-lg" />
         </div>
       </div>
     );

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { CardSkeleton, ErrorPanel } from "@/components/ui/feedback";
 import { useAuth } from "@/components/auth/auth-provider";
 import { ReviewList } from "@/components/quiz/review-list";
@@ -107,8 +106,8 @@ export default function AttemptPage({ params }: { params: Promise<{ attemptId: s
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-8 py-4">
-      <div className="flex flex-col gap-4">
+    <div className="mx-auto flex max-w-3xl flex-col gap-14">
+      <div className="flex flex-col gap-8">
         <Link
           href={`/quizzes/${quiz.id}`}
           className="inline-flex w-fit items-center gap-1.5 rounded-md text-caption text-secondary hover:text-primary"
@@ -117,44 +116,50 @@ export default function AttemptPage({ params }: { params: Promise<{ attemptId: s
           {quiz.title}
         </Link>
 
-        <Card className="flex flex-col items-center gap-5 p-6 sm:flex-row sm:gap-8">
-          <ScoreRing score={attempt.score} />
-          <div className="flex flex-1 flex-col gap-3 text-center sm:text-left">
-            <div className="flex flex-col gap-1">
+        {/* No card: the score is the page's subject, so it sits on the page. */}
+        <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:gap-12">
+          <ScoreRing score={attempt.score} size={132} />
+
+          <div className="flex flex-1 flex-col gap-6">
+            <div className="flex flex-col gap-1.5">
               <h1 className="text-title1">
                 {attempt.answers.filter((answer) => answer.isCorrect).length} of{" "}
                 {attempt.answers.length} correct
               </h1>
               {attempt.durationSec !== undefined && (
                 <p className="text-callout text-secondary">
-                  Time taken: {formatDuration(attempt.durationSec)}
+                  {formatDuration(attempt.durationSec)} taken
                 </p>
               )}
             </div>
 
-            <dl className="flex flex-col gap-1 text-callout">
+            <dl className="flex flex-wrap gap-x-10 gap-y-3">
               {byType.mcq.total > 0 && (
-                <div className="flex justify-between gap-4 sm:justify-start">
-                  <dt className="text-secondary">Multiple choice</dt>
-                  <dd className="tabular-nums">
-                    {byType.mcq.correct}/{byType.mcq.total}
+                <div className="flex flex-col gap-0.5">
+                  <dt className="text-caption text-tertiary">Multiple choice</dt>
+                  <dd className="text-title2 tabular-nums">
+                    {byType.mcq.correct}
+                    <span className="text-callout text-tertiary">/{byType.mcq.total}</span>
                   </dd>
                 </div>
               )}
               {byType.identification.total > 0 && (
-                <div className="flex justify-between gap-4 sm:justify-start">
-                  <dt className="text-secondary">Identification</dt>
-                  <dd className="tabular-nums">
-                    {byType.identification.correct}/{byType.identification.total}
+                <div className="flex flex-col gap-0.5">
+                  <dt className="text-caption text-tertiary">Identification</dt>
+                  <dd className="text-title2 tabular-nums">
+                    {byType.identification.correct}
+                    <span className="text-callout text-tertiary">
+                      /{byType.identification.total}
+                    </span>
                   </dd>
                 </div>
               )}
             </dl>
 
-            <div className="flex flex-wrap justify-center gap-2 sm:justify-start">
+            <div className="flex flex-wrap gap-2">
               {missed.length > 0 && (
                 <Button onClick={retakeIncorrect}>
-                  <RotateCcw aria-hidden className="size-[18px]" />
+                  <RotateCcw aria-hidden className="size-4" />
                   Retake {missed.length} incorrect
                 </Button>
               )}
@@ -163,11 +168,11 @@ export default function AttemptPage({ params }: { params: Promise<{ attemptId: s
               </Link>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
-      <section className="flex flex-col gap-4">
-        <h2 className="text-title2">Review</h2>
+      <section className="flex flex-col gap-5">
+        <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">Review</h2>
         <ReviewList
           questions={covered}
           answers={attempt.answers}

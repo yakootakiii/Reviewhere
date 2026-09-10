@@ -71,7 +71,8 @@ export function buildLibraryItems(
     kind: "quiz",
     id: quiz.id,
     title: quiz.title,
-    subtitle: `${quiz.questionCount} questions · ${quiz.mix.mcqPct}% multiple choice`,
+    // The mix belongs on the quiz page; on a card it only crowds out the date.
+    subtitle: `${quiz.questionCount} questions`,
     tags: quiz.tags ?? [],
     href: `/quizzes/${quiz.id}`,
     createdAt: toMillis(quiz.createdAt),

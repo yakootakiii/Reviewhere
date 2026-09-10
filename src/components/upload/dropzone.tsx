@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { FileText, Presentation, UploadCloud } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MAX_FILE_BYTES, formatBytes } from "@/lib/documents-shared";
 import { fileTypeFor } from "@/lib/extraction";
@@ -53,20 +53,15 @@ export function Dropzone({
           if (!disabled) accept(event.dataTransfer.files[0]);
         }}
         className={cn(
-          "flex flex-col items-center gap-3 rounded-xl border-2 border-dashed px-6 py-12 text-center",
-          "transition-colors duration-200",
+          "flex flex-col items-center gap-3 rounded-lg border border-dashed px-6 py-16 text-center",
+          "transition-colors duration-150",
           dragging
             ? "border-[var(--color-accent)] bg-accent-soft"
-            : "border-[var(--color-border-strong)] bg-surface",
+            : "border-[var(--color-border-strong)] bg-surface hover:border-[var(--color-text-tertiary)]",
           disabled && "pointer-events-none opacity-60",
         )}
       >
-        <div
-          aria-hidden
-          className="flex size-12 items-center justify-center rounded-2xl bg-surface-secondary text-secondary"
-        >
-          <UploadCloud className="size-6" />
-        </div>
+        <UploadCloud aria-hidden strokeWidth={1.5} className="size-6 text-tertiary" />
         <div className="flex flex-col gap-1">
           <p className="text-body font-medium">Drag your document here</p>
           <p className="text-caption text-secondary">
@@ -79,9 +74,9 @@ export function Dropzone({
           onClick={() => inputRef.current?.click()}
           disabled={disabled}
           className={cn(
-            "mt-1 inline-flex h-10 items-center rounded-md bg-surface-secondary px-4",
-            "text-callout font-medium text-primary transition-all duration-200",
-            "hover:bg-surface-hover active:scale-[0.97]",
+            "mt-2 inline-flex h-11 items-center rounded-md px-4 hairline",
+            "text-callout font-medium text-primary transition-colors duration-150",
+            "hover:bg-surface-secondary active:opacity-80",
           )}
         >
           Browse files
@@ -99,14 +94,6 @@ export function Dropzone({
           }}
         />
 
-        <div className="mt-2 flex items-center gap-4 text-caption text-tertiary">
-          <span className="inline-flex items-center gap-1.5">
-            <FileText aria-hidden className="size-3.5" /> PDF
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Presentation aria-hidden className="size-3.5" /> PPTX
-          </span>
-        </div>
       </div>
 
       {error && (

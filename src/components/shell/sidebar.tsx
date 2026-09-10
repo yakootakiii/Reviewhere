@@ -20,15 +20,15 @@ export function Sidebar({
   return (
     <aside
       className={cn(
-        "sticky top-0 hidden h-dvh shrink-0 flex-col gap-1 border-r border-[var(--color-border)] px-3 py-4 lg:flex",
-        "transition-[width] duration-300 [transition-timing-function:var(--ease-out-soft)]",
-        collapsed ? "w-[76px]" : "w-[240px]",
+        "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-[var(--color-border)] px-3 py-5 lg:flex",
+        "transition-[width] duration-200 [transition-timing-function:var(--ease-out-soft)]",
+        collapsed ? "w-[68px]" : "w-[220px]",
       )}
     >
-      <div className={cn("mb-4 flex items-center px-2", collapsed ? "justify-center" : "justify-between")}>
+      <div className={cn("mb-8 flex items-center px-2", collapsed ? "justify-center" : "justify-between")}>
         {!collapsed && (
-          <Link href="/dashboard" className="text-title2 tracking-tight">
-            Review<span className="text-accent-gradient">here</span>
+          <Link href="/dashboard" className="text-callout font-semibold tracking-[-0.01em]">
+            Reviewhere<span className="text-[var(--color-accent)]">.</span>
           </Link>
         )}
         <IconButton label={collapsed ? "Expand sidebar" : "Collapse sidebar"} onClick={onToggle}>
@@ -40,7 +40,7 @@ export function Sidebar({
         </IconButton>
       </div>
 
-      <nav aria-label="Main" className="flex flex-col gap-1">
+      <nav aria-label="Main" className="flex flex-col gap-0.5">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`);
           return (
@@ -49,16 +49,22 @@ export function Sidebar({
               href={href}
               aria-current={active ? "page" : undefined}
               title={collapsed ? label : undefined}
+              // Active state is weight and colour, not a filled tint block —
+              // a coloured pill per item makes the nav the loudest thing on screen.
               className={cn(
-                "flex items-center gap-3 rounded-md px-3 py-2.5 text-callout font-medium",
-                "transition-colors duration-200",
+                "flex items-center gap-3 rounded-md px-3 py-2 text-callout",
+                "transition-colors duration-150",
                 collapsed && "justify-center px-0",
                 active
-                  ? "bg-accent-soft text-[var(--color-accent)]"
-                  : "text-secondary hover:bg-surface-secondary hover:text-primary",
+                  ? "font-medium text-primary"
+                  : "text-secondary hover:text-primary",
               )}
             >
-              <Icon aria-hidden className="size-[18px] shrink-0" />
+              <Icon
+                aria-hidden
+                strokeWidth={active ? 2 : 1.75}
+                className={cn("size-[18px] shrink-0", active && "text-[var(--color-accent)]")}
+              />
               {!collapsed && label}
               {collapsed && <span className="sr-only">{label}</span>}
             </Link>

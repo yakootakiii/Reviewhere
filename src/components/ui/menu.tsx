@@ -62,9 +62,9 @@ export function Menu({
           setOpen((value) => !value);
         }}
         className={cn(
-          "inline-flex size-8 shrink-0 items-center justify-center rounded-full text-secondary",
-          "transition-all duration-200 [transition-timing-function:var(--ease-out-soft)]",
-          "hover:bg-surface-secondary hover:text-primary active:scale-[0.94]",
+          "inline-flex size-8 shrink-0 items-center justify-center rounded-md text-tertiary",
+          "transition-colors duration-150 [transition-timing-function:var(--ease-out-soft)]",
+          "hover:bg-surface-secondary hover:text-primary",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]",
           open && "bg-surface-secondary text-primary",
         )}
@@ -77,13 +77,13 @@ export function Menu({
           <motion.div
             id={menuId}
             role="menu"
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: reduceMotion ? 0.1 : 0.16, ease: [0.22, 1, 0.36, 1] }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -3 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0.08 : 0.12, ease: [0.22, 1, 0.36, 1] }}
             className={cn(
-              "absolute z-40 mt-1 flex min-w-44 flex-col gap-0.5 rounded-md bg-surface p-1",
-              "hairline shadow-[var(--shadow-lifted)]",
+              "absolute z-40 mt-1.5 flex min-w-44 flex-col rounded-md bg-surface p-1",
+              "hairline shadow-[var(--shadow-overlay)]",
               align === "end" ? "right-0" : "left-0",
             )}
           >
@@ -116,8 +116,8 @@ export function MenuItem({
         onClick();
       }}
       className={cn(
-        "flex items-center gap-2.5 rounded-[8px] px-2.5 py-2 text-left text-callout",
-        "transition-colors duration-150 hover:bg-surface-secondary",
+        "flex items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-left text-callout",
+        "transition-colors duration-100 hover:bg-surface-secondary",
         "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-accent)]",
         destructive ? "text-[var(--color-error)]" : "text-primary",
       )}

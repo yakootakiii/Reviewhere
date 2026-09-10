@@ -22,11 +22,15 @@ export function BottomTabBar() {
             href={href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors",
-              active ? "text-[var(--color-accent)]" : "text-secondary",
+              "flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] transition-colors duration-150",
+              active ? "font-medium text-primary" : "text-secondary",
             )}
           >
-            <Icon aria-hidden className="size-[22px]" />
+            <Icon
+              aria-hidden
+              strokeWidth={active ? 2 : 1.75}
+              className={cn("size-[21px]", active && "text-[var(--color-accent)]")}
+            />
             {label}
           </Link>
         );

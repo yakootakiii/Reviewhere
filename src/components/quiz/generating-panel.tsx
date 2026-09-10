@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorPanel } from "@/components/ui/feedback";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -95,18 +94,10 @@ export function GeneratingPanel({
   const percent = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-4 rounded-xl bg-surface hairline p-6 shadow-[var(--shadow-soft)]">
-      <div className="flex items-center gap-3">
-        <div
-          aria-hidden
-          className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-accent-soft text-[var(--color-accent)]"
-        >
-          <Sparkles className="size-5" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-callout font-medium">Writing your quiz</p>
-          <p className="truncate text-caption text-secondary">{document.fileName}</p>
-        </div>
+    <div className="flex flex-col gap-4">
+      <div className="min-w-0">
+        <p className="text-callout font-medium">Writing your quiz</p>
+        <p className="truncate text-caption text-tertiary">{document.fileName}</p>
       </div>
 
       <div
@@ -115,10 +106,10 @@ export function GeneratingPanel({
         aria-valuemax={100}
         aria-valuenow={progress.total > 0 ? percent : undefined}
         aria-label="Generation progress"
-        className="h-1.5 overflow-hidden rounded-full bg-surface-secondary"
+        className="h-[3px] overflow-hidden rounded-full bg-[var(--color-border)]"
       >
         <div
-          className="h-full rounded-full bg-accent-gradient transition-[width] duration-500"
+          className="h-full rounded-full bg-[var(--color-accent)] transition-[width] duration-500"
           // Until the server reports a chunk count there is nothing honest to
           // show, so the bar animates instead of inventing a percentage.
           style={progress.total > 0 ? { width: `${Math.max(percent, 6)}%` } : { width: "18%" }}

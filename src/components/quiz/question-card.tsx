@@ -33,13 +33,15 @@ export function QuestionCard({
   inputRef?: React.Ref<HTMLInputElement>;
 }) {
   return (
-    <div className="flex flex-col gap-5 rounded-xl bg-surface hairline p-6 shadow-[var(--shadow-soft)]">
-      <div className="flex flex-col gap-2">
+    // No box: the question is the page. A card around it would only add a line
+    // between the reader and the thing they are reading.
+    <div className="flex flex-col gap-7">
+      <div className="flex flex-col gap-3">
         <p className="text-caption text-tertiary">
           Question {index + 1} of {total} ·{" "}
           {question.type === "mcq" ? "Multiple choice" : "Identification"}
         </p>
-        <h2 className="text-title2 leading-snug">{question.prompt}</h2>
+        <h2 className="max-w-[34ch] text-title1 text-balance">{question.prompt}</h2>
       </div>
 
       {question.type === "mcq" && question.choices ? (
@@ -54,22 +56,20 @@ export function QuestionCard({
                   aria-pressed={isSelected}
                   onClick={() => onSelect(choice)}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-md px-4 py-3 text-left text-callout",
-                    "transition-all duration-200 [transition-timing-function:var(--ease-out-soft)]",
+                    "flex w-full items-center gap-3.5 rounded-md border px-4 py-3.5 text-left text-body",
+                    "transition-colors duration-150 [transition-timing-function:var(--ease-out-soft)]",
                     "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-accent)]",
                     "disabled:cursor-default",
                     isSelected
-                      ? "bg-accent-soft ring-2 ring-[var(--color-accent)]"
-                      : "bg-surface-secondary hover:bg-surface-hover",
+                      ? "border-[var(--color-accent)] bg-accent-soft"
+                      : "border-[var(--color-border)] hover:border-[var(--color-border-strong)]",
                   )}
                 >
                   <span
                     aria-hidden
                     className={cn(
-                      "flex size-6 shrink-0 items-center justify-center rounded-[7px] text-caption font-medium",
-                      isSelected
-                        ? "bg-[var(--color-accent)] text-white"
-                        : "bg-surface text-tertiary",
+                      "w-3 shrink-0 text-caption tabular-nums",
+                      isSelected ? "text-[var(--color-accent)]" : "text-tertiary",
                     )}
                   >
                     {choiceIndex + 1}
@@ -81,8 +81,8 @@ export function QuestionCard({
           })}
         </ul>
       ) : (
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="identification-answer" className="text-caption font-medium text-secondary">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="identification-answer" className="text-caption text-secondary">
             Your answer
           </label>
           <input
@@ -103,8 +103,8 @@ export function QuestionCard({
             placeholder="Type your answer"
             className={cn(
               "h-12 w-full rounded-md bg-surface px-3.5 text-body text-primary",
-              "border border-[var(--color-border-strong)] placeholder:text-tertiary",
-              "outline-none transition-colors duration-200",
+              "border border-[var(--color-border)] placeholder:text-tertiary",
+              "outline-none transition-colors duration-150 hover:border-[var(--color-border-strong)]",
               "focus-visible:border-[var(--color-accent)] focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-[var(--color-accent)]",
               "disabled:opacity-60",
             )}

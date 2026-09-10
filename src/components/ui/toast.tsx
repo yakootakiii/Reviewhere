@@ -67,7 +67,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                 transition={{ duration: reduceMotion ? 0.12 : 0.25, ease: [0.22, 1, 0.36, 1] }}
                 className={cn(
                   "pointer-events-auto flex w-full max-w-sm items-start gap-2.5 rounded-lg",
-                  "bg-surface hairline px-3.5 py-3 shadow-[var(--shadow-lifted)]",
+                  "bg-surface hairline px-3.5 py-3 shadow-[var(--shadow-overlay)]",
                 )}
                 // Errors interrupt; success/info wait for a pause.
                 role={item.variant === "error" ? "alert" : "status"}

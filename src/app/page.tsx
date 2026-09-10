@@ -1,30 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { FileText, ListChecks, Sparkles, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth/auth-provider";
 
-const FEATURES = [
+/**
+ * Set as an ordered walkthrough rather than a grid of feature cards: these are
+ * four steps of one flow, and numbering them says more than four icon tiles do.
+ */
+const STEPS = [
   {
-    icon: FileText,
-    title: "PDF or slides in",
-    body: "Drop in up to 150 pages of lecture slides or readings. We pull out the text, diagrams and all.",
+    title: "Upload your material",
+    body: "A PDF or PowerPoint, up to 150 pages. The text is pulled out on the server — nothing to prepare first.",
   },
   {
-    icon: Sparkles,
-    title: "A real quiz out",
-    body: "Multiple choice interleaved with identification questions, so it feels like the actual exam.",
+    title: "Get a real quiz",
+    body: "Multiple choice interleaved with written identification questions, the way an actual exam is set.",
   },
   {
-    icon: ListChecks,
-    title: "Every answer explained",
-    body: "Each question links back to the page it came from, with a short explanation once you answer.",
+    title: "Answer, then understand",
+    body: "Every question carries a short explanation and the page it came from, so a wrong answer teaches something.",
   },
   {
-    icon: Timer,
-    title: "Track what sticks",
-    body: "Scores, time taken, and a breakdown by type — plus a one-tap retake of just what you missed.",
+    title: "See what stuck",
+    body: "Scores and timing per sitting, and a one-tap retake of only the questions you missed.",
   },
 ];
 
@@ -34,9 +33,9 @@ export default function LandingPage() {
 
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="flex items-center justify-between px-6 py-5">
-        <span className="text-title2 tracking-tight">
-          Review<span className="text-accent-gradient">here</span>
+      <header className="page flex max-w-5xl items-center justify-between py-5">
+        <span className="text-callout font-semibold tracking-[-0.01em]">
+          Reviewhere<span className="text-[var(--color-accent)]">.</span>
         </span>
         <nav className="flex items-center gap-2" aria-label="Account">
           {!loading &&
@@ -60,42 +59,51 @@ export default function LandingPage() {
       </header>
 
       <main id="main" className="flex-1">
-        <section className="mx-auto flex max-w-3xl flex-col items-center gap-6 px-6 pt-16 pb-20 text-center sm:pt-24">
-          <span className="rounded-full bg-surface-secondary px-3 py-1 text-caption text-secondary">
-            Active recall, not re-reading
-          </span>
-          <h1 className="text-[44px] leading-[1.05] font-bold tracking-[-0.025em] sm:text-[60px]">
-            Your notes,
-            <br />
-            <span className="text-accent-gradient">turned into a quiz.</span>
+        {/* Left-aligned rather than centred: a measure this long is easier to
+            read ranged left, and it lines up with everything below it. */}
+        <section className="page max-w-5xl pt-20 pb-24 sm:pt-32 sm:pb-32">
+          <h1 className="max-w-[15ch] text-[40px] leading-[1.06] font-semibold tracking-[-0.03em] text-balance sm:text-[52px]">
+            Turn your notes into a quiz you can actually sit.
           </h1>
-          <p className="max-w-xl text-body text-secondary">
-            Upload a PDF or PowerPoint and get a polished, ready-to-take reviewer — multiple choice
-            and identification, scored and explained.
+          <p className="mt-6 max-w-[52ch] text-body text-secondary">
+            Upload a PDF or a slide deck. Reviewhere reads it and writes a mixed reviewer —
+            multiple choice and written answers, scored, explained, and linked back to the page it
+            came from.
           </p>
-          <Link href={primaryHref}>
-            <Button size="lg">{user ? "Open dashboard" : "Upload your first document"}</Button>
-          </Link>
+          <div className="mt-9 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Link href={primaryHref}>
+              <Button size="lg">{user ? "Open dashboard" : "Upload a document"}</Button>
+            </Link>
+            <span className="text-caption text-tertiary">
+              Free, and built for a handful of students.
+            </span>
+          </div>
         </section>
 
-        <section className="mx-auto grid max-w-5xl gap-4 px-6 pb-24 sm:grid-cols-2">
-          {FEATURES.map(({ icon: Icon, title, body }) => (
-            <div key={title} className="rounded-xl bg-surface hairline p-6 shadow-[var(--shadow-soft)]">
-              <div
-                aria-hidden
-                className="mb-4 flex size-10 items-center justify-center rounded-[10px] bg-accent-soft text-[var(--color-accent)]"
-              >
-                <Icon className="size-5" />
-              </div>
-              <h2 className="text-title2 mb-1.5">{title}</h2>
-              <p className="text-callout text-secondary">{body}</p>
-            </div>
-          ))}
+        <section aria-labelledby="how" className="page max-w-5xl pb-28">
+          <h2 id="how" className="text-caption tracking-[0.06em] text-tertiary uppercase">
+            How it works
+          </h2>
+          {/* Rules, not boxes: the divider does the grouping a card would. */}
+          <ol className="mt-8 grid gap-x-16 gap-y-10 sm:grid-cols-2">
+            {STEPS.map(({ title, body }, index) => (
+              <li key={title} className="border-t border-[var(--color-border)] pt-5">
+                <span className="text-caption text-tertiary tabular-nums">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3 className="mt-2 text-title2">{title}</h3>
+                <p className="mt-2 max-w-[46ch] text-callout text-secondary">{body}</p>
+              </li>
+            ))}
+          </ol>
         </section>
       </main>
 
-      <footer className="border-t border-[var(--color-border)] px-6 py-6 text-center text-caption text-tertiary">
-        Reviewhere — built for studying, free for everyone using it.
+      <footer className="border-t border-[var(--color-border)]">
+        <div className="page flex max-w-5xl items-center justify-between py-8 text-caption text-tertiary">
+          <span>Reviewhere</span>
+          <span>Built for studying. Free for everyone using it.</span>
+        </div>
       </footer>
     </div>
   );

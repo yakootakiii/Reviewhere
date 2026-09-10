@@ -1,7 +1,5 @@
 "use client";
 
-import { Check, X } from "lucide-react";
-import { Card } from "@/components/ui/card";
 import { checkAnswer } from "@/lib/quiz/matching";
 import { cn } from "@/lib/utils";
 import type { AttemptAnswer, Question } from "@/lib/types";
@@ -23,7 +21,7 @@ export function ReviewList({
   const byQuestion = new Map(answers.map((answer) => [answer.questionId, answer]));
 
   return (
-    <ol className="flex flex-col gap-4">
+    <ol className="divide-y divide-[var(--color-border)] border-y border-[var(--color-border)]">
       {questions.map((question, index) => {
         const answer = byQuestion.get(question.id);
         const correct = answer?.isCorrect ?? false;
@@ -32,33 +30,25 @@ export function ReviewList({
         const viaTypo = given ? checkAnswer(given, question).viaTypo : false;
 
         return (
-          <li key={question.id}>
-            <Card className="flex flex-col gap-3">
+          <li key={question.id} className="flex flex-col gap-3 py-6">
               <div className="flex items-start justify-between gap-3">
                 <span className="text-caption text-tertiary">
                   {index + 1} · {question.type === "mcq" ? "Multiple choice" : "Identification"}
                 </span>
                 <span
                   className={cn(
-                    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-medium",
-                    correct
-                      ? "bg-[var(--color-success-soft)] text-[var(--color-success)]"
-                      : "bg-[var(--color-error-soft)] text-[var(--color-error)]",
+                    "text-caption",
+                    correct ? "text-[var(--color-success)]" : "text-[var(--color-error)]",
                   )}
                 >
-                  {correct ? (
-                    <Check aria-hidden className="size-3.5" />
-                  ) : (
-                    <X aria-hidden className="size-3.5" />
-                  )}
                   {correct ? "Correct" : "Incorrect"}
                 </span>
               </div>
 
-              <p className="text-body">{question.prompt}</p>
+              <p className="max-w-[68ch] text-body">{question.prompt}</p>
 
               {question.choices && (
-                <ul className="flex flex-col gap-1.5">
+                <ul className="flex max-w-[68ch] flex-col gap-1.5">
                   {question.choices.map((choice) => {
                     const isAnswer = choice === question.correctAnswer;
                     const isChoice = given.toLowerCase() === choice.toLowerCase();
@@ -66,12 +56,12 @@ export function ReviewList({
                       <li
                         key={choice}
                         className={cn(
-                          "rounded-md px-3 py-2 text-callout",
+                          "rounded-sm border-l-2 py-1 pl-3 text-callout",
                           isAnswer
-                            ? "bg-[var(--color-success-soft)]"
+                            ? "border-[var(--color-success)]"
                             : isChoice
-                              ? "bg-[var(--color-error-soft)]"
-                              : "bg-surface-secondary text-secondary",
+                              ? "border-[var(--color-error)]"
+                              : "border-transparent text-secondary",
                         )}
                       >
                         {choice}
@@ -85,7 +75,7 @@ export function ReviewList({
               )}
 
               {question.type === "identification" && (
-                <div className="flex flex-col gap-1 text-callout">
+                <div className="flex max-w-[68ch] flex-col gap-1 text-callout">
                   <p>
                     <span className="text-secondary">Your answer: </span>
                     {given ? (
@@ -112,7 +102,7 @@ export function ReviewList({
                 </div>
               )}
 
-              <p className="text-caption text-secondary">{question.explanation}</p>
+              <p className="max-w-[68ch] text-callout text-secondary">{question.explanation}</p>
 
               {question.sourcePage !== null && (
                 <p className="text-caption text-tertiary">
@@ -128,7 +118,6 @@ export function ReviewList({
                   )}
                 </p>
               )}
-            </Card>
           </li>
         );
       })}
