@@ -3,12 +3,14 @@ import { FieldValue } from "firebase-admin/firestore";
 import { adminDb, isAdminConfigured, uidFromAuthHeader } from "@/lib/firebase/admin";
 import { logRouteError } from "@/lib/log";
 import {
-  assertHasText,
   assertWithinPageLimit,
   extractDocument,
   ExtractionError,
   fileTypeFor,
+  looksLikeScan,
+  SCAN_REJECTION_MESSAGE,
 } from "@/lib/extraction";
+import { isOcrConfigured } from "@/lib/ocr";
 import { MAX_CHARS_PER_PAGE_DOC, MAX_FILE_BYTES } from "@/lib/documents-shared";
 import { formatBytes } from "@/lib/documents-shared";
 
@@ -59,7 +61,16 @@ export async function POST(request: Request) {
     const extracted = await extractDocument(bytes, fileType);
 
     assertWithinPageLimit(extracted.pageCount);
-    assertHasText(extracted);
+
+    /*
+     * A scan used to be the end of the road. It can now be offered to OCR
+     * (§3.3) — but only for a PDF, since that is where a page image can be
+     * recovered from, and only when the server has a key to read it with.
+     * Everything else still gets the original copy explaining why.
+     */
+    const scanned = looksLikeScan(extracted);
+    const canOcr = scanned && fileType === "pdf" && isOcrConfigured();
+    if (scanned && !canOcr) throw new ExtractionError(SCAN_REJECTION_MESSAGE);
 
     const db = adminDb();
     const docRef = db.collection("documents").doc();
@@ -71,7 +82,9 @@ export async function POST(request: Request) {
       storagePath: null,
       pageCount: extracted.pageCount,
       fileType,
-      status: "ready",
+      // "processing" means the text isn't there yet and OCR has been offered;
+      // the document is real either way, so it is never lost to the library.
+      status: canOcr ? "processing" : "ready",
       sizeBytes: file.size,
       characterCount: extracted.characterCount,
       emptyPages: extracted.emptyPages,
@@ -95,6 +108,7 @@ export async function POST(request: Request) {
       pageCount: extracted.pageCount,
       fileType,
       emptyPages: extracted.emptyPages,
+      needsOcr: canOcr,
     });
   } catch (error) {
     if (error instanceof ExtractionError) return fail(422, error.userMessage);

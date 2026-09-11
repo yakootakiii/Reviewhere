@@ -62,7 +62,12 @@ export function buildLibraryItems(
       kind: "document",
       id: document.id,
       title: document.fileName,
-      subtitle: `${document.pageCount} ${unit} · ${count} quiz${count === 1 ? "" : "zes"}`,
+      // §3.3: a scan waiting to be read has no text yet, and saying so here
+      // stops it looking like an ordinary document that just has no quizzes.
+      subtitle:
+        document.status === "processing"
+          ? `${document.pageCount} ${unit} · needs reading`
+          : `${document.pageCount} ${unit} · ${count} quiz${count === 1 ? "" : "zes"}`,
       tags: document.tags ?? [],
       href: `/documents/${document.id}`,
       createdAt: toMillis(document.createdAt),

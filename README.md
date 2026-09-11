@@ -45,6 +45,7 @@ it with you** — the variables have to be set on the host as well.
 | `FIREBASE_SERVICE_ACCOUNT` | yes | Service-account JSON, one line or base64. Project settings → Service accounts → Generate new private key |
 | `OPENROUTER_API_KEY` | for Mode A | Free-tier key from <https://openrouter.ai/keys>. Without it the app leads with the copy-paste prompt instead |
 | `OPENROUTER_MODEL` | no | Overrides the head of the free-model chain when availability shifts |
+| `OPENROUTER_VISION_MODEL` | no | Same, for the vision chain that reads scanned handwriting (§3.3). Without any key, a scan is rejected rather than offered |
 | `NEXT_PUBLIC_ENABLE_APPLE_SIGNIN` | no | `"true"` once the Apple provider is configured (needs a paid Apple Developer account) |
 
 Two things that catch people out:
@@ -105,6 +106,8 @@ incidental advantage of living in the same project as Firestore and Auth.
 - `src/lib/extraction/` — PDF and PPTX text extraction, tested against real file
   bytes rather than mocks
 - `src/lib/generation/` — both question-generation modes behind one validator
+- `src/lib/ocr/` — reads scanned and handwritten PDFs into page text with a free
+  vision model; deliberately separate from `extraction/`, which stays offline
 - `src/lib/quiz/` — answer matching, scoring, and the in-progress session
 - `firestore.rules` — the actual security boundary, covered by `npm run test:rules`
 

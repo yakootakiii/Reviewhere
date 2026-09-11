@@ -12,6 +12,8 @@ import {
 import type { User } from "firebase/auth";
 import { firestore } from "./client";
 import type { ExtractedPage } from "@/lib/extraction/types";
+import type { OcrEvent } from "@/lib/ocr/types";
+import { readNdjson } from "@/lib/ndjson";
 import type { StudyDocument } from "@/lib/types";
 
 export interface IngestResult {
@@ -20,6 +22,8 @@ export interface IngestResult {
   pageCount: number;
   fileType: "pdf" | "pptx";
   emptyPages: number[];
+  /** §3.3: the file parsed as a scan, and its handwriting can be read instead. */
+  needsOcr?: boolean;
 }
 
 /**
@@ -122,5 +126,65 @@ export async function deleteDocument(user: User, documentId: string): Promise<vo
   if (!response.ok) {
     const payload = (await response.json().catch(() => null)) as { error?: string } | null;
     throw new Error(payload?.error ?? "That document couldn't be deleted. Please try again.");
+  }
+}
+
+
+/* ------------------------------------------------------------------- OCR §3.3 */
+
+export class OcrError extends Error {}
+
+/**
+ * Reads a scanned PDF's handwriting into page text, streaming progress.
+ *
+ * The file goes back up with the request: the ingest route keeps no copy of the
+ * original (see the Storage decision), so the browser's own File is the only
+ * source. That is why this takes a `File` rather than just a document id.
+ */
+export async function runOcr(
+  user: User,
+  documentId: string,
+  file: File,
+  onEvent: (event: OcrEvent) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  const token = await user.getIdToken();
+  const body = new FormData();
+  body.append("file", file);
+
+  const response = await fetch(`/api/documents/${documentId}/ocr`, {
+    method: "POST",
+    signal,
+    headers: { Authorization: `Bearer ${token}` },
+    body,
+  });
+
+  if (!response.ok || !response.body) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new OcrError(payload?.error ?? "We couldn't start reading that file.");
+  }
+
+  await readNdjson<OcrEvent>(response.body, onEvent);
+}
+
+/**
+ * Corrects one transcribed page. Goes through the API because the pages
+ * subcollection is server-write-only in the rules.
+ */
+export async function savePageText(
+  user: User,
+  documentId: string,
+  page: number,
+  text: string,
+): Promise<void> {
+  const token = await user.getIdToken();
+  const response = await fetch(`/api/documents/${documentId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ page, text }),
+  });
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    throw new OcrError(payload?.error ?? "We couldn't save that edit.");
   }
 }

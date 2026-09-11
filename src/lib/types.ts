@@ -54,6 +54,14 @@ export interface StudyDocument {
   tags?: string[];
   /** Set when status is "failed" — surfaced with a retry action (§6). */
   errorMessage?: string;
+  /** Total characters of page text, whether extracted or transcribed. */
+  characterCount?: number;
+  /** Pages with no usable text. For a scan these are what OCR (§3.3) targets. */
+  emptyPages?: number[];
+  /** §3.3: pages whose text came from reading handwriting, not from the PDF. */
+  ocrPages?: number[];
+  /** Which vision model read it. Metadata, never branched on. */
+  ocrModel?: string | null;
 }
 
 export interface Quiz {

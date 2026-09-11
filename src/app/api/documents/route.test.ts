@@ -61,6 +61,9 @@ beforeEach(() => {
   state.configured = true;
   state.uid = "user-123";
   state.written = [];
+  // Whether OCR is on hand changes what a scan does, so no test inherits
+  // another's stub — or the ambient environment's key.
+  vi.unstubAllEnvs();
 });
 
 describe("POST /api/documents", () => {
@@ -88,13 +91,45 @@ describe("POST /api/documents", () => {
     expect(state.written).toHaveLength(0);
   });
 
-  it("rejects a scanned document with copy explaining why", async () => {
+  /*
+   * §3.3 split this in two. A scan is only a rejection when nothing can be done
+   * about it; with a key and a PDF it becomes an offer instead. The env is
+   * stubbed explicitly in both, because leaving it to whatever the test
+   * environment happens to hold made the old test pass for the wrong reason.
+   */
+  it("rejects a scanned document when there's no key to read it with", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "");
     const response = await upload(pdfFile(["", "", ""]));
     expect(response.status).toBe(422);
     await expect(response.json()).resolves.toMatchObject({
       error: expect.stringContaining("scan"),
     });
     expect(state.written).toHaveLength(0);
+  });
+
+  it("rejects a scanned .pptx even with a key, since it has no page images", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    const empty = await makePptx([{ text: [] }, { text: [] }]);
+    const response = await upload(
+      new File([empty as BlobPart], "deck.pptx", {
+        type: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+      }),
+    );
+    expect(response.status).toBe(422);
+    expect(state.written).toHaveLength(0);
+  });
+
+  it("keeps a scanned PDF and offers to read it when OCR is available", async () => {
+    vi.stubEnv("OPENROUTER_API_KEY", "test-key");
+    const response = await upload(pdfFile(["", "", ""]));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({ needsOcr: true, pageCount: 3 });
+
+    // The document is real and waiting, never lost to the library.
+    const document = state.written.find((entry) => entry.path.startsWith("documents/"));
+    expect(document?.data.status).toBe("processing");
+    expect(document?.data.emptyPages).toEqual([1, 2, 3]);
   });
 
   it("enforces the 150-page cap on its own page count, not the client's", async () => {

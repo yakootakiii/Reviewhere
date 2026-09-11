@@ -204,6 +204,9 @@ function tileMeta(item: LibraryItem): string {
     if (item.shared) return item.subtitle.split(" · ").slice(1).join(" · ");
     return item.score !== null ? `Last score ${item.score}%` : formatDate(item.createdAt);
   }
+  // §3.3: a scan waiting to be read has no text yet, so "0 quizzes" would be
+  // the least useful thing to say about it.
+  if (item.document.status === "processing") return "Needs reading";
   const count = item.quizCount;
   return `${count} quiz${count === 1 ? "" : "zes"} · ${formatDate(item.createdAt)}`;
 }

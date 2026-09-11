@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import type { User } from "firebase/auth";
 import { firestore } from "./client";
+import { readNdjson } from "@/lib/ndjson";
 import type { CsvValues } from "@/lib/generation/csv-import";
 import type { GenerationEvent, QuizSettings } from "@/lib/generation/types";
 import type { ShareRecipient } from "@/lib/quiz-shared";
@@ -211,24 +212,7 @@ export async function generateQuiz(
     );
   }
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-
-  for (;;) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-
-    // Events are newline-delimited; the tail may be a partial line.
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      if (line.trim()) onEvent(JSON.parse(line) as GenerationEvent);
-    }
-  }
-
-  if (buffer.trim()) onEvent(JSON.parse(buffer) as GenerationEvent);
+  await readNdjson<GenerationEvent>(response.body, onEvent);
 }
 
 /* ----------------------------------------------------------- import (Mode B) */

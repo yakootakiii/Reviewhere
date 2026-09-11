@@ -20,7 +20,7 @@ A web app that turns a student's PDF or PowerPoint (up to 150 pages) into a mixe
 - Accept `.pdf` and `.pptx` (and `.ppt` via conversion).
 - **Hard limit: 150 pages/slides per file.** Reject with a clear, friendly error state above the limit (see §7.7).
 - Drag-and-drop + "Browse files" input, with upload progress bar.
-- Server-side text + image/diagram extraction (OCR fallback for scanned/image-heavy PDFs).
+- Server-side text extraction, with an **OCR path for scanned and handwritten PDFs** — see §3.3. A scan is no longer rejected: it is detected, and reading its handwriting is offered.
 - Show a short "Analyzing your document…" loading state with a page/slide counter while parsing.
 
 ### 2.2 Quiz Generation
@@ -110,7 +110,7 @@ type,question,choice_a,choice_b,choice_c,choice_d,correct_answer,accepted_answer
 - **Database:** Firestore (documents, quizzes, questions, attempts, user profiles).
 - **File storage:** Firebase Storage (uploaded PDFs/PPTX, capped per-file size in addition to the 150-page rule).
 - **Backend/processing:** Firebase Cloud Functions (or a small dedicated Node/Python service) for:
-  - PDF text extraction (e.g., `pdf-parse`, `pdfplumber`) and OCR fallback (Tesseract) for scanned pages.
+  - PDF text extraction (`unpdf`), and for scanned pages a **vision-model OCR path rather than Tesseract** — see §3.3 for why.
   - PPTX parsing (e.g., `python-pptx` or `pptx2json`) for slide text/notes.
   - LLM calls via **OpenRouter free-tier models** for automatic question generation (Mode A); CSV import/parsing for the manual fallback (Mode B).
 - **Hosting:** a host that runs a persistent Node process — Render, Railway, Fly, or Firebase App Hosting. *Not* a serverless platform: Vercel and similar cap request bodies (4.5 MB) far below this app's 25 MB upload limit, so a large document never reaches the ingest route. See `render.yaml` and the README.
@@ -135,6 +135,57 @@ Still worth having, purely for cost/abuse protection (not monetization):
 - A soft per-user daily cap on Mode A generations (e.g., a Cloud Function guard), just to avoid one runaway loop exhausting the free OpenRouter quota for everyone. This can be a fixed constant in code rather than user-facing plan logic.
 
 ---
+
+### 3.3 Reading Scanned and Handwritten Notes (OCR)
+
+Students photograph or scan handwritten notes and turn them into a PDF, which
+arrives here as pages of raster image and no selectable text. Until this existed
+that was a dead end: `assertHasText` rejected it with copy explaining why.
+
+**Tesseract is the wrong tool, despite being the obvious one.** It is trained on
+printed type and is poor at handwriting, which is the whole use case. The vision
+models on OpenRouter's free tier read it well, and two of them
+(`nex-agi/nex-n2.5-pro:free`, `dots-studio/dots-3-note-preview:free`) are
+already in the Mode A chain — so this adds no dependency, no key and no cost.
+Verified against the live model list and real transcriptions on 2026-09-10.
+
+**The pipeline is image → text → the existing pipeline.** A transcribed page is
+written into `/documents/{id}/pages/{n}` exactly as extracted text is, so
+chunking, both generation modes, `sourcePage`, the review screen and
+regeneration know nothing about where the text came from. Feeding page images
+straight to the question generator would have been fewer steps and would have
+broken all five.
+
+How a page image is obtained matters: a scanned PDF is almost always one
+full-page raster per page, which `extractImages` hands over directly. No
+rasterising means no `@napi-rs/canvas` and no `sharp` — the raw pixels are
+downscaled and PNG-encoded with Node's own zlib. Pages that store their image in
+a form pdf.js cannot decode (tiled strips, JBIG2/CCITT masks) are reported as
+unreadable rather than silently skipped; rendering those properly would need the
+canvas dependency, and is a deliberate not-yet.
+
+Decisions worth keeping:
+
+- **Opt-in, never automatic.** One model call per page against a quota five
+  people share, minutes rather than seconds, and variable accuracy. The offer
+  states the page count and a rough time before spending anything.
+- **Only the empty pages.** `emptyPages` from ingest is the target list, so a
+  PDF of typed pages with a few scanned inserts pays for the inserts alone.
+- **The transcription is shown and editable before any questions are written.**
+  A misread word doesn't produce a visibly broken quiz — it produces a
+  confidently wrong question that a student revising from it cannot catch. Same
+  principle as Mode B's bad-row preview.
+- **Diagrams are described inline**, as `[diagram: …]`, and an illegible word
+  becomes `[?]`. Handwritten notes are half sketches; flattening them to words
+  alone would lose that.
+- **A blank page returns empty, not invented text** — verified against the live
+  models. That is what lets "nothing written here" be told from "this failed".
+- **The file comes back up with the OCR request.** The app keeps no copy of the
+  original (see the Storage decision), so the browser's file is the only source.
+  Returning to a half-read document means choosing the file again, and the copy
+  says so rather than leaving it stuck.
+- **Caps in both directions:** 60 pages per document, 200 pages per user per
+  day, alongside the Mode A cap in §3.2.
 
 ## 4. Data Model (Firestore)
 
@@ -335,6 +386,7 @@ Radii: `--radius-sm: 6px` through `--radius-2xl: 18px` (the widget tile). There 
 | Sharing reveals account existence | `getUserByEmail` means a failed share distinguishes "no such account" from other errors. Accepted deliberately: for a private app with about five known users, a usable flow is worth more than hiding that, and the alternative (silent success on unknown addresses) would be worse UX |
 | Sharing a quiz does not share its document | Questions are copied into the quiz at generation time, so a recipient gets the questions, explanations and page numbers, but no access to the uploaded file's extracted text. The page links simply don't render for them |
 | Themes | Six named themes, not a light/dark toggle, chosen from a dropdown in Settings (the monkeytype model). Every theme redefines the same token set, so no component knows which is active, and `data-appearance` — not the theme's name — decides `color-scheme` and the `dark:` variant. All six are held to AA by `npm run check:contrast` in CI-able form rather than by eye |
+| Reading handwriting (§3.3) | A vision model on the free tier, not Tesseract — Tesseract is trained on printed type and this is handwriting. Transcribed text is written as ordinary page text so nothing downstream changes, it is opt-in with the cost stated, and it is shown for correction before questions are written from it. Page images come from `extractImages`, which needs no native dependency |
 | Visual direction (§7) | Gradients, card shadows and large radii removed. A white page, hairline surfaces, one flat accent, and hierarchy from type and space. Semantic colour is reserved for meaning — the score ring is one colour, not a traffic light |
 | Deleting a document | Keeps the quizzes generated from it: their questions were copied in at generation time, so they stay playable. Only the page links go dead, and the confirm dialog says so. Deletion runs server-side with `recursiveDelete` so the extracted page text goes with it |
 
@@ -346,7 +398,6 @@ asks for it.
 
 | Deferred | Where it's asked for | Why not, and what happens instead |
 |---|---|---|
-| OCR fallback for scanned PDFs | §2.1, §3 | The largest lift on this list (a Tesseract pipeline or a paid API) for a case none of the five users has hit. A scan is detected and rejected with copy explaining why (`assertHasText`), rather than failing mysteriously |
 | `.ppt` support via conversion | §2.1 | Needs a conversion step — LibreOffice or a service — for a format nobody has uploaded. `.ppt` is rejected explicitly, with a test pinning that behaviour |
 | "Select all that apply" MCQ | §2.3 | Marked optional in the spec. Every layer — the generator prompts, the CSV contract, `checkAnswer`, scoring — assumes one correct answer, so this is a change to the schema, not a UI toggle |
 | Results breakdown by topic/section | §2.5 | The by-type half is built. Topics would need the generator to label each question with one, which neither mode does today, and free models are unreliable at consistent taxonomies |

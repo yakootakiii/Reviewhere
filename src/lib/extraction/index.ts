@@ -46,24 +46,35 @@ export function assertWithinPageLimit(pageCount: number): void {
 }
 
 /**
- * Distinguishes "scanned document" from "sparse but real". §3 calls for an OCR
- * fallback here; until that exists we fail with copy that tells the user why.
+ * Distinguishes "scanned document" from "sparse but real".
  *
  * The empty-page ratio alone is not enough: a slide deck of short titles trips
- * it while still being perfectly readable, so a document is only rejected when
- * there is essentially no text per page — which is what an image-only scan
- * actually produces.
+ * it while still being perfectly readable, so a document only counts as a scan
+ * when there is essentially no text per page — which is what an image-only
+ * scan actually produces.
+ *
+ * A predicate rather than only an assertion, because a scan is no longer
+ * necessarily a rejection: §3.3 offers to read it with OCR instead, and the
+ * ingest route needs to ask the question without catching an exception to
+ * learn the answer.
  */
 const MIN_AVERAGE_CHARS_PER_PAGE = 10;
 
-export function assertHasText(result: ExtractionResult): void {
+export function looksLikeScan(result: ExtractionResult): boolean {
   const pageCount = Math.max(result.pageCount, 1);
   const emptyRatio = result.emptyPages.length / pageCount;
   const averageChars = result.characterCount / pageCount;
 
-  if (result.characterCount === 0 || (emptyRatio > 0.9 && averageChars < MIN_AVERAGE_CHARS_PER_PAGE)) {
-    throw new ExtractionError(
-      "We couldn't find any selectable text in this file — it looks like a scan or a set of images. Try a version with real text.",
-    );
-  }
+  return (
+    result.characterCount === 0 ||
+    (emptyRatio > 0.9 && averageChars < MIN_AVERAGE_CHARS_PER_PAGE)
+  );
+}
+
+/** The copy shown when a scan can't be offered OCR — a .pptx, or no API key. */
+export const SCAN_REJECTION_MESSAGE =
+  "We couldn't find any selectable text in this file — it looks like a scan or a set of images. Try a version with real text.";
+
+export function assertHasText(result: ExtractionResult): void {
+  if (looksLikeScan(result)) throw new ExtractionError(SCAN_REJECTION_MESSAGE);
 }

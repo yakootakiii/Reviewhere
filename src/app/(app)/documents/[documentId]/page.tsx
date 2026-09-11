@@ -8,6 +8,7 @@ import { CardSkeleton, EmptyState, ErrorPanel } from "@/components/ui/feedback";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GenerateFlow } from "@/components/quiz/generate-flow";
 import { LibraryCard } from "@/components/library/library-card";
+import { ResumeOcr } from "@/components/upload/resume-ocr";
 import { buildLibraryItems } from "@/lib/library";
 import { getDocument } from "@/lib/firebase/documents";
 import { listQuizzesForDocument } from "@/lib/firebase/quizzes";
@@ -102,10 +103,23 @@ export default function DocumentPage({ params }: { params: Promise<{ documentId:
         </div>
       </div>
 
-      <GenerateFlow
-        document={document}
-        label={quizzes.length > 0 ? "Generate another quiz" : "Generate quiz"}
-      />
+      {/* §3.3: a scan that was never read has no text to generate from, so the
+          way forward is reading it — not a generate button that would fail. */}
+      {document.status === "processing" ? (
+        <ResumeOcr
+          documentId={document.id}
+          fileName={document.fileName}
+          pageCount={document.pageCount}
+          onDone={() =>
+            setState({ name: "ready", document: { ...document, status: "ready" }, quizzes })
+          }
+        />
+      ) : (
+        <GenerateFlow
+          document={document}
+          label={quizzes.length > 0 ? "Generate another quiz" : "Generate quiz"}
+        />
+      )}
 
       <section className="flex flex-col gap-5">
         <h2 className="text-caption tracking-[0.06em] text-tertiary uppercase">Quizzes</h2>

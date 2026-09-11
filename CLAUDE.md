@@ -52,8 +52,12 @@ and the whole file is now covered by emulator-backed tests in [rules/firestore.t
 — run them with `npm run test:rules` (needs Java; kept out of `npm test`, which stays fast).
 Rules and all 7 indexes are **deployed** to `reviewhere-a1634`.
 
+**OCR for scanned/handwritten notes (§3.3)** — done, after the roadmap. `src/lib/ocr/` turns a
+scanned PDF's page images into ordinary page text via a free vision model, so nothing downstream
+knows the difference. `POST /api/documents/[documentId]/ocr` streams progress.
+
 What is left is not milestones but choices: a deploy target that isn't capped at 4.5 MB (see
-below), and the four §2 features recorded as deferred in the spec's §9.1.
+below), and the three §2 features recorded as deferred in the spec's §9.1.
 
 ## Storage: text-only, by decision
 
@@ -107,7 +111,24 @@ This is the central architectural constraint. Question generation has two indepe
 - **Deletes must go through the API, never `deleteDoc` from the client.** Firestore has no cascade and the `pages`/`questions` subcollections are `write: false`, so deleting a parent from the browser silently orphans every child row — which is exactly what M2–M4 did until M5 fixed it. `DELETE /api/documents/[documentId]` and `DELETE /api/quizzes/[quizId]` use the Admin SDK's `recursiveDelete`; both have tests asserting the children are gone, not just the parent.
 - **Authorization belongs in the rules, not in the page.** `AuthGuard` is a UX gate and so is any client-side ownership check: if a read came back, the rules already permitted it. Re-deciding it in a component is what made shared quizzes unopenable — both quiz pages still had `quiz.ownerId !== user.uid`, which rejected every recipient before the sharing rules could apply. `/documents` keeps its check only because documents genuinely are owner-only.
 - **Sharing grants read, and only read.** `/quizzes/{id}.sharedWith` holds recipient **uids** — never emails, because every recipient can read that array. It is absent from the client update allow-list, so it is written only by `/api/quizzes/[quizId]/share`; the rules tests assert that even the owner cannot edit it from the client. A recipient reads the quiz and its questions and records their own attempts, and nothing else: `saveAttempt` writes `lastAttemptScore` only when the caller owns the quiz.
+- **OCR produces page text, not questions.** `src/lib/ocr/` transcribes a scanned page and writes
+  it to `/documents/{id}/pages/{n}` exactly as extraction does, so chunking, both generation modes,
+  `sourcePage` and regeneration need no OCR-awareness at all. Handing page images straight to the
+  question generator would be fewer steps and would break every one of them. It also stays out of
+  `src/lib/extraction/`, which is pure and offline and should remain so — OCR needs the network.
+- **A transcription is shown before it becomes questions.** Handwriting OCR misreads words, and a
+  misread word is a confidently wrong question a student cannot catch — worse than a visible
+  failure. `TranscriptionReview` surfaces it and `PATCH /api/documents/[id]` saves corrections;
+  the pages subcollection stays `write: false`, so that edit cannot go direct from the client.
+- **Don't reuse a `Uint8Array` after handing it to pdf.js.** It transfers the buffer and leaves
+  yours detached; a second parse fails with "Unable to deserialize cloned data", which names
+  nothing useful. Copy first if you need the bytes again.
 - **A quiz outlives its source document.** Questions are copied into `/quizzes/{id}/questions` at generation time, so deleting a document keeps its quizzes playable; only the page links go dead, and the quiz and attempt pages check for the document and degrade rather than linking into nothing.
+- **Daily counters share one document, so write them through [src/lib/usage.ts](src/lib/usage.ts).**
+  Mode A generations and OCR pages both live in `/usage/{uid}`, and the old recorder wrote
+  `{ day, modeACount }` wholesale — which would have silently reset the OCR count on every
+  generation, handing back a day's quota. `bumpUsage` reads both, rolls the day over once, and
+  writes both.
 - **Single free tier, ~4–5 users.** No billing, plans, quotas, or upgrade UI. The only cap is a soft per-user daily Mode A limit as a code constant, for OpenRouter quota protection.
 - Offline/PWA support is explicitly out of scope.
 

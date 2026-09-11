@@ -8,6 +8,8 @@ import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/components/auth/auth-provider";
 import { GenerateFlow } from "@/components/quiz/generate-flow";
 import { Dropzone } from "./dropzone";
+import { OcrFlow } from "./ocr-flow";
+import { TranscriptionReview } from "./transcription-review";
 import { uploadDocument, type IngestResult } from "@/lib/firebase/documents";
 import { formatBytes } from "@/lib/documents-shared";
 import { cn } from "@/lib/utils";
@@ -16,7 +18,11 @@ type Stage =
   | { name: "idle" }
   | { name: "uploading"; file: File; progress: number }
   | { name: "analyzing"; file: File }
-  | { name: "done"; result: IngestResult }
+  // §3.3: the file parsed as a scan. The File is carried through because the
+  // server keeps no copy of the original to read from.
+  | { name: "ocr"; result: IngestResult; file: File }
+  | { name: "review"; result: IngestResult; pagesRead: number }
+  | { name: "done"; result: IngestResult; pagesRead?: number }
   | { name: "error"; message: string; file: File };
 
 export function UploadFlow() {
@@ -41,6 +47,10 @@ export function UploadFlow() {
 
       try {
         const result = await promise;
+        if (result.needsOcr) {
+          setStage({ name: "ocr", result, file });
+          return;
+        }
         setStage({ name: "done", result });
         toast(`${result.fileName} is ready — ${result.pageCount} pages.`, "success");
       } catch (error) {
@@ -79,17 +89,47 @@ export function UploadFlow() {
     );
   }
 
-  if (stage.name === "done") {
+  if (stage.name === "ocr") {
+    const { result, file } = stage;
+    return (
+      <OcrFlow
+        documentId={result.documentId}
+        file={file}
+        pageCount={result.pageCount}
+        onDone={(outcome) => {
+          setStage({ name: "review", result, pagesRead: outcome.pages.length });
+          toast(
+            `Read ${outcome.pages.length} page${outcome.pages.length === 1 ? "" : "s"} of handwriting.`,
+            "success",
+          );
+        }}
+      />
+    );
+  }
+
+  if (stage.name === "review") {
     const { result } = stage;
+    return (
+      <TranscriptionReview
+        documentId={result.documentId}
+        onContinue={() => setStage({ name: "done", result, pagesRead: stage.pagesRead })}
+      />
+    );
+  }
+
+  if (stage.name === "done") {
+    const { result, pagesRead } = stage;
     return (
       <div className="flex flex-col items-start gap-5">
         <div className="flex flex-col gap-1.5">
           <p className="flex items-center gap-2 text-caption text-[var(--color-success)]">
             <CheckCircle2 aria-hidden className="size-4" />
-            {result.pageCount} {result.fileType === "pptx" ? "slides" : "pages"} read and ready
+            {pagesRead === undefined
+              ? `${result.pageCount} ${result.fileType === "pptx" ? "slides" : "pages"} read and ready`
+              : `${pagesRead} page${pagesRead === 1 ? "" : "s"} of handwriting read and ready`}
           </p>
           <h2 className="text-title1 break-words">{result.fileName}</h2>
-          {result.emptyPages.length > 0 && (
+          {pagesRead === undefined && result.emptyPages.length > 0 && (
             <p className="text-caption text-tertiary">
               {result.emptyPages.length} page{result.emptyPages.length === 1 ? "" : "s"} had no
               readable text and will be skipped.

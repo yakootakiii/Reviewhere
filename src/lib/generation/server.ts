@@ -4,9 +4,10 @@
  */
 import { FieldValue } from "firebase-admin/firestore";
 import { adminDb } from "@/lib/firebase/admin";
+import { bumpUsage, readUsage } from "@/lib/usage";
 import type { ExtractedPage } from "@/lib/extraction/types";
 import type { GenerationMode, StudyDocument } from "@/lib/types";
-import { MAX_MODE_A_GENERATIONS_PER_DAY, quotaExceededMessage, usageDayKey } from "./limits";
+import { MAX_MODE_A_GENERATIONS_PER_DAY, quotaExceededMessage } from "./limits";
 import { resolveCounts } from "./settings";
 import { questionDocId } from "./questions";
 import { GenerationError, type QuestionDraft, type QuizSettings } from "./types";
@@ -57,23 +58,14 @@ export async function loadPages(documentId: string): Promise<ExtractedPage[]> {
  * own counter.
  */
 export async function assertModeAQuota(uid: string): Promise<void> {
-  const snapshot = await adminDb().collection("usage").doc(uid).get();
-  const data = snapshot.data();
-  if (!data || data.day !== usageDayKey()) return;
-  if ((data.modeACount as number) >= MAX_MODE_A_GENERATIONS_PER_DAY) {
+  const { modeACount } = await readUsage(uid);
+  if (modeACount >= MAX_MODE_A_GENERATIONS_PER_DAY) {
     throw new GenerationError(quotaExceededMessage(), { offerModeB: true });
   }
 }
 
 export async function recordModeAGeneration(uid: string): Promise<void> {
-  const ref = adminDb().collection("usage").doc(uid);
-  const day = usageDayKey();
-  await adminDb().runTransaction(async (transaction) => {
-    const snapshot = await transaction.get(ref);
-    const data = snapshot.data();
-    const count = data?.day === day ? (data.modeACount as number) + 1 : 1;
-    transaction.set(ref, { day, modeACount: count });
-  });
+  await bumpUsage(uid, "modeACount");
 }
 
 
